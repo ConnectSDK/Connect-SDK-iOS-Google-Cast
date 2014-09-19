@@ -68,6 +68,8 @@
 
     [self.service.castDeviceManager removeChannel:_castServiceChannel];
     _castServiceChannel = nil;
+
+    [self.service.castDeviceManager leaveApplication];
 }
 
 #pragma mark - ServiceCommandDelegate
