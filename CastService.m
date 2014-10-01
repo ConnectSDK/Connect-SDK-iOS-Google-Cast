@@ -263,7 +263,7 @@
     DLog(@"%@", error.localizedDescription);
 }
 
-- (void)deviceManager:(GCKDeviceManager *)deviceManager didReceiveStatusForApplication:(GCKApplicationMetadata *)applicationMetadata
+- (void)deviceManager:(GCKDeviceManager *)deviceManager didReceiveApplicationMetadata:(GCKApplicationMetadata *)applicationMetadata
 {
     DLog(@"%@", applicationMetadata);
 
