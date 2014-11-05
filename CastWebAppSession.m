@@ -27,6 +27,7 @@
     MediaPlayStateSuccessBlock _immediatePlayStateCallback;
 
     ServiceSubscription *_playStateSubscription;
+    ServiceSubscription *_mediaInfoSubscription;
 }
 
 @end
@@ -80,6 +81,8 @@
     {
         if (subscription == _playStateSubscription)
             _playStateSubscription = nil;
+        else if (subscription == _mediaInfoSubscription)
+            _mediaInfoSubscription = nil;
     }
 
     return -1;
@@ -192,6 +195,18 @@
             if (mediaPlayStateSuccess)
                 mediaPlayStateSuccess(playState);
         }];
+    }
+    
+    if (_mediaInfoSubscription)
+    {
+        [_mediaInfoSubscription.successCalls enumerateObjectsUsingBlock:^(id success, NSUInteger idx, BOOL *stop)
+         {
+             SuccessBlock mediaInfoSuccess = (SuccessBlock) success;
+             
+             if (mediaInfoSuccess){
+                 mediaInfoSuccess([self getMetadataInfo]);
+             }
+         }];
     }
 }
 
@@ -344,6 +359,54 @@
         [self disconnectFromWebApp];
 
     [self.service.webAppLauncher closeWebApp:self.launchSession success:success failure:failure];
+}
+
+-(void)getMediaMetaDataWithSuccess:(SuccessBlock)success failure:(FailureBlock)failure{
+    if (self.service.castMediaControlChannel.mediaStatus)
+    {
+        if (success){
+        
+            success([self getMetadataInfo]);
+        }
+    } else
+    {
+        if (failure)
+            failure([ConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"There is no media currently available"]);
+    }
+}
+
+- (ServiceSubscription *)subscribeMediaInfoWithSuccess:(SuccessBlock)success failure:(FailureBlock)failure{
+    if (!_mediaInfoSubscription)
+        _mediaInfoSubscription = [ServiceSubscription subscriptionWithDelegate:self target:nil payload:nil callId:-1];
+    
+    [_mediaInfoSubscription addSuccess:success];
+    [_mediaInfoSubscription addFailure:failure];
+    
+    [self.service.castMediaControlChannel requestStatus];
+    
+    return _mediaInfoSubscription;
+}
+
+-(NSDictionary *)getMetadataInfo{
+    
+    NSMutableDictionary *mediaMetaData = [NSMutableDictionary dictionary];
+    GCKMediaMetadata *metaData = self.service.castMediaControlChannel.mediaStatus.mediaInformation.metadata;
+    
+    if([metaData objectForKey:@"com.google.cast.metadata.TITLE"])
+        [mediaMetaData setObject:[metaData objectForKey:@"com.google.cast.metadata.TITLE"] forKey:@"title"];
+    
+    if([metaData objectForKey:@"com.google.cast.metadata.SUBTITLE"])
+        [mediaMetaData setObject:[metaData objectForKey:@"com.google.cast.metadata.SUBTITLE"] forKey:@"subtitle"];
+    
+    if([metaData objectForKey:@"images"]){
+        NSArray *images = [metaData objectForKey:@"images"];
+        if([images count] > 0){
+            [mediaMetaData setObject: [[images firstObject] objectForKey:@"url"] forKey:@"iconURL"];
+        }
+        
+    }
+    
+    return mediaMetaData;
 }
 
 @end
