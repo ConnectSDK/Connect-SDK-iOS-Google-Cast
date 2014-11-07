@@ -105,6 +105,8 @@
             kMediaControlPosition,
             kMediaControlPlayState,
             kMediaControlPlayStateSubscribe,
+            kMediaControlMetadata,
+            kMediaControlMetadataSubscribe,
 
             kWebAppLauncherLaunch,
             kWebAppLauncherMessageSend,
