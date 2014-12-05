@@ -228,6 +228,14 @@
         failure([ConnectError generateErrorWithCode:ConnectStatusCodeArgumentError andDetails:nil]);
 }
 
+- (void) displayImage:(MediaInfo *)mediaInfo
+              success:(MediaPlayerDisplaySuccessBlock)success
+              failure:(FailureBlock)failure
+{
+    if (failure)
+        failure([ConnectError generateErrorWithCode:ConnectStatusCodeArgumentError andDetails:nil]);
+}
+
 - (void) playMedia:(NSURL *)mediaURL iconURL:(NSURL *)iconURL title:(NSString *)title description:(NSString *)description mimeType:(NSString *)mimeType shouldLoop:(BOOL)shouldLoop success:(MediaPlayerDisplaySuccessBlock)success failure:(FailureBlock)failure
 {
     GCKMediaMetadata *metaData = [[GCKMediaMetadata alloc] initWithMetadataType:GCKMediaMetadataTypeMovie];
