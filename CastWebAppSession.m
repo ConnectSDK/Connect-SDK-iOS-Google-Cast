@@ -228,6 +228,14 @@
         failure([ConnectError generateErrorWithCode:ConnectStatusCodeArgumentError andDetails:nil]);
 }
 
+- (void) displayImage:(MediaInfo *)mediaInfo
+              success:(MediaPlayerDisplaySuccessBlock)success
+              failure:(FailureBlock)failure
+{
+    if (failure)
+        failure([ConnectError generateErrorWithCode:ConnectStatusCodeArgumentError andDetails:nil]);
+}
+
 - (void) playMedia:(NSURL *)mediaURL iconURL:(NSURL *)iconURL title:(NSString *)title description:(NSString *)description mimeType:(NSString *)mimeType shouldLoop:(BOOL)shouldLoop success:(MediaPlayerDisplaySuccessBlock)success failure:(FailureBlock)failure
 {
     GCKMediaMetadata *metaData = [[GCKMediaMetadata alloc] initWithMetadataType:GCKMediaMetadataTypeMovie];
@@ -249,6 +257,16 @@
         if (success)
             success(self.launchSession, self.mediaControl);
     } failure:failure];
+}
+
+- (void) playMedia:(MediaInfo *)mediaInfo shouldLoop:(BOOL)shouldLoop success:(MediaPlayerDisplaySuccessBlock)success failure:(FailureBlock)failure
+{
+    NSURL *iconURL;
+    if(mediaInfo.images){
+        ImageInfo *imageInfo = [mediaInfo.images firstObject];
+        iconURL = imageInfo.url;
+    }
+    [self playMedia:mediaInfo.url iconURL:iconURL title:mediaInfo.title description:mediaInfo.description mimeType:mediaInfo.mimeType shouldLoop:shouldLoop success:success failure:failure];
 }
 
 - (void) closeMedia:(LaunchSession *)launchSession success:(SuccessBlock)success failure:(FailureBlock)failure
