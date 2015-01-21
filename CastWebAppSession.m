@@ -238,25 +238,17 @@
 
 - (void) playMedia:(NSURL *)mediaURL iconURL:(NSURL *)iconURL title:(NSString *)title description:(NSString *)description mimeType:(NSString *)mimeType shouldLoop:(BOOL)shouldLoop success:(MediaPlayerDisplaySuccessBlock)success failure:(FailureBlock)failure
 {
-    GCKMediaMetadata *metaData = [[GCKMediaMetadata alloc] initWithMetadataType:GCKMediaMetadataTypeMovie];
-    [metaData setString:title forKey:kGCKMetadataKeyTitle];
-    [metaData setString:description forKey:kGCKMetadataKeySubtitle];
-
-    if (iconURL)
-    {
-        GCKImage *iconImage = [[GCKImage alloc] initWithURL:iconURL width:100 height:100];
-        [metaData addImage:iconImage];
-    }
-
-    GCKMediaInformation *mediaInformation = [[GCKMediaInformation alloc] initWithContentID:mediaURL.absoluteString streamType:GCKMediaStreamTypeBuffered contentType:mimeType metadata:metaData streamDuration:1000 customData:nil];
-
-    [self.service playMedia:mediaInformation webAppId:self.launchSession.appId success:^(LaunchSession *launchSession, id <MediaControl> mediaControl)
-    {
-        self.launchSession.sessionId = launchSession.sessionId;
-
-        if (success)
-            success(self.launchSession, self.mediaControl);
+    
+    MediaInfo *mediaInfo = [[MediaInfo alloc] initWithURL:mediaURL mimeType:mimeType];
+    mediaInfo.title = title;
+    mediaInfo.description = description;
+    ImageInfo *imageInfo = [[ImageInfo alloc] initWithURL:iconURL type:ImageTypeThumb];
+    [mediaInfo addImage:imageInfo];
+    
+    [self playMediaWithMediaInfo:mediaInfo shouldLoop:shouldLoop success:^(MediaLaunchObject *mediaLanchObject) {
+        success(mediaLanchObject.session,mediaLanchObject.mediaControl);
     } failure:failure];
+    
 }
 
 - (void) playMedia:(MediaInfo *)mediaInfo shouldLoop:(BOOL)shouldLoop success:(MediaPlayerDisplaySuccessBlock)success failure:(FailureBlock)failure
@@ -267,6 +259,36 @@
         iconURL = imageInfo.url;
     }
     [self playMedia:mediaInfo.url iconURL:iconURL title:mediaInfo.title description:mediaInfo.description mimeType:mediaInfo.mimeType shouldLoop:shouldLoop success:success failure:failure];
+}
+
+- (void)playMediaWithMediaInfo:(MediaInfo *)mediaInfo shouldLoop:(BOOL)shouldLoop success:(MediaPlayerSuccessBlock)success failure:(FailureBlock)failure
+{
+    NSURL *iconURL;
+    if(mediaInfo.images){
+        ImageInfo *imageInfo = [mediaInfo.images firstObject];
+        iconURL = imageInfo.url;
+    }
+    
+    GCKMediaMetadata *metaData = [[GCKMediaMetadata alloc] initWithMetadataType:GCKMediaMetadataTypeMovie];
+    [metaData setString:mediaInfo.title forKey:kGCKMetadataKeyTitle];
+    [metaData setString:mediaInfo.description forKey:kGCKMetadataKeySubtitle];
+    
+    if (iconURL)
+    {
+        GCKImage *iconImage = [[GCKImage alloc] initWithURL:iconURL width:100 height:100];
+        [metaData addImage:iconImage];
+    }
+    
+    GCKMediaInformation *mediaInformation = [[GCKMediaInformation alloc] initWithContentID:mediaInfo.url.absoluteString streamType:GCKMediaStreamTypeBuffered contentType:mediaInfo.mimeType metadata:metaData streamDuration:1000 customData:nil];
+    
+    [self.service playMedia:mediaInformation webAppId:self.launchSession.appId success:^(MediaLaunchObject *mediaLanchObject){
+         self.launchSession.sessionId = mediaLanchObject.session.sessionId;
+        mediaLanchObject.session = self.launchSession;
+        mediaLanchObject.mediaControl = self.mediaControl;
+         if (success)
+             success(mediaLanchObject);
+     } failure:failure];
+    
 }
 
 - (void) closeMedia:(LaunchSession *)launchSession success:(SuccessBlock)success failure:(FailureBlock)failure
