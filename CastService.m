@@ -458,7 +458,7 @@
             _castMediaControlChannel.delegate = (CastWebAppSession *) webAppSession;
 
             if (success){
-                    MediaLaunchObject *launchObject = [[MediaLaunchObject alloc] initLaunchSession:webAppSession.launchSession withMediaControl:webAppSession.mediaControl];
+                    MediaLaunchObject *launchObject = [[MediaLaunchObject alloc] initWithLaunchSession:webAppSession.launchSession withMediaControl:webAppSession.mediaControl];
                     success(launchObject);
             }
         }
