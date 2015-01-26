@@ -122,6 +122,12 @@
     [self setCapabilities:capabilities];
 }
 
+- (void) sendNotSupportedFailure:(FailureBlock)failure
+{
+    if (failure)
+        failure([ConnectError generateErrorWithCode:ConnectStatusCodeNotSupported andDetails:nil]);
+}
+
 #pragma mark - Connection
 
 - (void)connect
@@ -705,6 +711,27 @@
         if (failure)
             failure([ConnectError generateErrorWithCode:ConnectStatusCodeTvError andDetails:nil]);
     }
+}
+
+-(void)pinWebApp:(LaunchSession *)launchSession success:(SuccessBlock)success failure:(FailureBlock)failure
+{
+    [self sendNotSupportedFailure:failure];
+}
+
+-(void)unPinWebApp:(NSString *)webAppId success:(SuccessBlock)success failure:(FailureBlock)failure
+{
+    [self sendNotSupportedFailure:failure];
+}
+
+- (void)isWebAppPinned:(NSString *)webAppId success:(WebAppPinStatusBlock)success failure:(FailureBlock)failure
+{
+    [self sendNotSupportedFailure:failure];
+}
+
+- (ServiceSubscription *)subscribeIsWebAppPinned:(NSString*)webAppId success:(WebAppPinStatusBlock)success failure:(FailureBlock)failure
+{
+    [self sendNotSupportedFailure:failure];
+    return nil;
 }
 
 #pragma mark - Volume Control
