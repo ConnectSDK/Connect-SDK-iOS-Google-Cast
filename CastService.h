@@ -39,7 +39,7 @@
 @property (nonatomic, retain, readonly) GCKMediaControlChannel *castMediaControlChannel;
 
 /*! The CastService will launch the specified web app id. */
-@property (nonatomic, retain)NSString *castWebAppId;
+@property (nonatomic, copy)NSString *castWebAppId;
 
 // @cond INTERNAL
 - (void) playMedia:(GCKMediaInformation *)mediaInformation webAppId:(NSString *)webAppId success:(MediaPlayerSuccessBlock)success failure:(FailureBlock)failure;
