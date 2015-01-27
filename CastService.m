@@ -128,6 +128,14 @@
         failure([ConnectError generateErrorWithCode:ConnectStatusCodeNotSupported andDetails:nil]);
 }
 
+-(NSString *)castWebAppId
+{
+    if(_castWebAppId == nil){
+        _castWebAppId = kGCKMediaDefaultReceiverApplicationID;
+    }
+    return _castWebAppId;
+}
+
 #pragma mark - Connection
 
 - (void)connect
@@ -353,10 +361,6 @@
         [metaData addImage:iconImage];
     }
     
-    if(!self.castWebAppId){
-        self.castWebAppId = kGCKMediaDefaultReceiverApplicationID;
-    }
-    
     GCKMediaInformation *mediaInformation = [[GCKMediaInformation alloc] initWithContentID:imageURL.absoluteString streamType:GCKMediaStreamTypeNone contentType:mimeType metadata:metaData streamDuration:0 customData:nil];
 
     [self playMedia:mediaInformation webAppId:self.castWebAppId success:^(MediaLaunchObject *mediaLanchObject) {
@@ -395,10 +399,6 @@
         [metaData addImage:iconImage];
     }
     
-    if(!self.castWebAppId){
-        self.castWebAppId = kGCKMediaDefaultReceiverApplicationID;
-    }
-    
     GCKMediaInformation *mediaInformation = [[GCKMediaInformation alloc] initWithContentID:mediaInfo.url.absoluteString streamType:GCKMediaStreamTypeNone contentType:mediaInfo.mimeType metadata:metaData streamDuration:0 customData:nil];
     
     [self playMedia:mediaInformation webAppId:self.castWebAppId success:success failure:failure];
@@ -416,10 +416,6 @@
         [metaData addImage:iconImage];
     }
     
-    if(!self.castWebAppId){
-        self.castWebAppId = kGCKMediaDefaultReceiverApplicationID;
-    }
-
     GCKMediaInformation *mediaInformation = [[GCKMediaInformation alloc] initWithContentID:videoURL.absoluteString streamType:GCKMediaStreamTypeBuffered contentType:mimeType metadata:metaData streamDuration:1000 customData:nil];
 
     [self playMedia:mediaInformation webAppId:self.castWebAppId success:^(MediaLaunchObject *mediaLanchObject) {
@@ -452,10 +448,6 @@
     {
         GCKImage *iconImage = [[GCKImage alloc] initWithURL:iconURL width:100 height:100];
         [metaData addImage:iconImage];
-    }
-    
-    if(!self.castWebAppId){
-        self.castWebAppId = kGCKMediaDefaultReceiverApplicationID;
     }
     
     GCKMediaInformation *mediaInformation = [[GCKMediaInformation alloc] initWithContentID:mediaInfo.url.absoluteString streamType:GCKMediaStreamTypeBuffered contentType:mediaInfo.mimeType metadata:metaData streamDuration:1000 customData:nil];
