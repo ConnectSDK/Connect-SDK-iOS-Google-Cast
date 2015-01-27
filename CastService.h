@@ -38,6 +38,9 @@
 /*! The GCKMediaControlChannel that the CastService is using to send media events to the connected web app. */
 @property (nonatomic, retain, readonly) GCKMediaControlChannel *castMediaControlChannel;
 
+/*! The CastService will launch the specified web app id. */
+@property (nonatomic, retain)NSString *castWebAppId;
+
 // @cond INTERNAL
 - (void) playMedia:(GCKMediaInformation *)mediaInformation webAppId:(NSString *)webAppId success:(MediaPlayerSuccessBlock)success failure:(FailureBlock)failure;
 // @endcond

@@ -352,10 +352,14 @@
         GCKImage *iconImage = [[GCKImage alloc] initWithURL:iconURL width:100 height:100];
         [metaData addImage:iconImage];
     }
-
+    
+    if(!self.castWebAppId){
+        self.castWebAppId = kGCKMediaDefaultReceiverApplicationID;
+    }
+    
     GCKMediaInformation *mediaInformation = [[GCKMediaInformation alloc] initWithContentID:imageURL.absoluteString streamType:GCKMediaStreamTypeNone contentType:mimeType metadata:metaData streamDuration:0 customData:nil];
 
-    [self playMedia:mediaInformation webAppId:kGCKMediaDefaultReceiverApplicationID success:^(MediaLaunchObject *mediaLanchObject) {
+    [self playMedia:mediaInformation webAppId:self.castWebAppId success:^(MediaLaunchObject *mediaLanchObject) {
         success(mediaLanchObject.session,mediaLanchObject.mediaControl);
     } failure:failure];
 }
@@ -391,9 +395,13 @@
         [metaData addImage:iconImage];
     }
     
+    if(!self.castWebAppId){
+        self.castWebAppId = kGCKMediaDefaultReceiverApplicationID;
+    }
+    
     GCKMediaInformation *mediaInformation = [[GCKMediaInformation alloc] initWithContentID:mediaInfo.url.absoluteString streamType:GCKMediaStreamTypeNone contentType:mediaInfo.mimeType metadata:metaData streamDuration:0 customData:nil];
     
-    [self playMedia:mediaInformation webAppId:kGCKMediaDefaultReceiverApplicationID success:success failure:failure];
+    [self playMedia:mediaInformation webAppId:self.castWebAppId success:success failure:failure];
 }
 
 - (void) playMedia:(NSURL *)videoURL iconURL:(NSURL *)iconURL title:(NSString *)title description:(NSString *)description mimeType:(NSString *)mimeType shouldLoop:(BOOL)shouldLoop success:(MediaPlayerDisplaySuccessBlock)success failure:(FailureBlock)failure
@@ -407,10 +415,14 @@
         GCKImage *iconImage = [[GCKImage alloc] initWithURL:iconURL width:100 height:100];
         [metaData addImage:iconImage];
     }
+    
+    if(!self.castWebAppId){
+        self.castWebAppId = kGCKMediaDefaultReceiverApplicationID;
+    }
 
     GCKMediaInformation *mediaInformation = [[GCKMediaInformation alloc] initWithContentID:videoURL.absoluteString streamType:GCKMediaStreamTypeBuffered contentType:mimeType metadata:metaData streamDuration:1000 customData:nil];
 
-    [self playMedia:mediaInformation webAppId:kGCKMediaDefaultReceiverApplicationID success:^(MediaLaunchObject *mediaLanchObject) {
+    [self playMedia:mediaInformation webAppId:self.castWebAppId success:^(MediaLaunchObject *mediaLanchObject) {
         success(mediaLanchObject.session,mediaLanchObject.mediaControl);
     } failure:failure];
 }
@@ -442,9 +454,13 @@
         [metaData addImage:iconImage];
     }
     
+    if(!self.castWebAppId){
+        self.castWebAppId = kGCKMediaDefaultReceiverApplicationID;
+    }
+    
     GCKMediaInformation *mediaInformation = [[GCKMediaInformation alloc] initWithContentID:mediaInfo.url.absoluteString streamType:GCKMediaStreamTypeBuffered contentType:mediaInfo.mimeType metadata:metaData streamDuration:1000 customData:nil];
     
-    [self playMedia:mediaInformation webAppId:kGCKMediaDefaultReceiverApplicationID success:success failure:failure];
+    [self playMedia:mediaInformation webAppId:self.castWebAppId success:success failure:failure];
 }
 
 - (void) playMedia:(GCKMediaInformation *)mediaInformation webAppId:(NSString *)mediaAppId success:(MediaPlayerSuccessBlock)success failure:(FailureBlock)failure
