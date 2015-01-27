@@ -78,11 +78,11 @@
     return self;
 }
 
-+ (NSDictionary *) discoveryParameters
++ (DiscoveryFilter *) discoveryParameters
 {
-    return @{
-             @"serviceId":kConnectSDKCastServiceId
-             };
+    // Cast uses its own discovery methods in the SDK, so filter is not required
+    return [DiscoveryFilter filterWithServiceId:kConnectSDKCastServiceId
+                                      andFilter:nil];
 }
 
 - (BOOL)isConnectable
