@@ -708,7 +708,7 @@
 
 - (void)closeWebApp:(LaunchSession *)launchSession success:(SuccessBlock)success failure:(FailureBlock)failure
 {
-    BOOL result = [self.castDeviceManager stopApplicationWithSessionID:launchSession.sessionId];
+    BOOL result = [self.castDeviceManager stopApplication];
 
     if (result)
     {
