@@ -39,7 +39,7 @@
 @property (nonatomic, retain, readonly) GCKMediaControlChannel *castMediaControlChannel;
 
 // @cond INTERNAL
-- (void) playMedia:(GCKMediaInformation *)mediaInformation webAppId:(NSString *)webAppId success:(MediaPlayerDisplaySuccessBlock)success failure:(FailureBlock)failure;
+- (void) playMedia:(GCKMediaInformation *)mediaInformation webAppId:(NSString *)webAppId success:(MediaPlayerSuccessBlock)success failure:(FailureBlock)failure;
 // @endcond
 
 @end

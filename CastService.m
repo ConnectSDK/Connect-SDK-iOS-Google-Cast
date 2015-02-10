@@ -122,6 +122,12 @@
     [self setCapabilities:capabilities];
 }
 
+- (void) sendNotSupportedFailure:(FailureBlock)failure
+{
+    if (failure)
+        failure([ConnectError generateErrorWithCode:ConnectStatusCodeNotSupported andDetails:nil]);
+}
+
 #pragma mark - Connection
 
 - (void)connect
@@ -349,7 +355,9 @@
 
     GCKMediaInformation *mediaInformation = [[GCKMediaInformation alloc] initWithContentID:imageURL.absoluteString streamType:GCKMediaStreamTypeNone contentType:mimeType metadata:metaData streamDuration:0 customData:nil];
 
-    [self playMedia:mediaInformation webAppId:kGCKMediaDefaultReceiverApplicationID success:success failure:failure];
+    [self playMedia:mediaInformation webAppId:kGCKMediaDefaultReceiverApplicationID success:^(MediaLaunchObject *mediaLanchObject) {
+        success(mediaLanchObject.session,mediaLanchObject.mediaControl);
+    } failure:failure];
 }
 
 - (void) displayImage:(MediaInfo *)mediaInfo
@@ -363,6 +371,29 @@
     }
     
     [self displayImage:mediaInfo.url iconURL:iconURL title:mediaInfo.title description:mediaInfo.description mimeType:mediaInfo.mimeType success:success failure:failure];
+}
+
+- (void) displayImageWithMediaInfo:(MediaInfo *)mediaInfo success:(MediaPlayerSuccessBlock)success failure:(FailureBlock)failure
+{
+    NSURL *iconURL;
+    if(mediaInfo.images){
+        ImageInfo *imageInfo = [mediaInfo.images firstObject];
+        iconURL = imageInfo.url;
+    }
+    
+    GCKMediaMetadata *metaData = [[GCKMediaMetadata alloc] initWithMetadataType:GCKMediaMetadataTypePhoto];
+    [metaData setString:mediaInfo.title forKey:kGCKMetadataKeyTitle];
+    [metaData setString:mediaInfo.description forKey:kGCKMetadataKeySubtitle];
+    
+    if (iconURL)
+    {
+        GCKImage *iconImage = [[GCKImage alloc] initWithURL:iconURL width:100 height:100];
+        [metaData addImage:iconImage];
+    }
+    
+    GCKMediaInformation *mediaInformation = [[GCKMediaInformation alloc] initWithContentID:mediaInfo.url.absoluteString streamType:GCKMediaStreamTypeNone contentType:mediaInfo.mimeType metadata:metaData streamDuration:0 customData:nil];
+    
+    [self playMedia:mediaInformation webAppId:kGCKMediaDefaultReceiverApplicationID success:success failure:failure];
 }
 
 - (void) playMedia:(NSURL *)videoURL iconURL:(NSURL *)iconURL title:(NSString *)title description:(NSString *)description mimeType:(NSString *)mimeType shouldLoop:(BOOL)shouldLoop success:(MediaPlayerDisplaySuccessBlock)success failure:(FailureBlock)failure
@@ -379,7 +410,9 @@
 
     GCKMediaInformation *mediaInformation = [[GCKMediaInformation alloc] initWithContentID:videoURL.absoluteString streamType:GCKMediaStreamTypeBuffered contentType:mimeType metadata:metaData streamDuration:1000 customData:nil];
 
-    [self playMedia:mediaInformation webAppId:kGCKMediaDefaultReceiverApplicationID success:success failure:failure];
+    [self playMedia:mediaInformation webAppId:kGCKMediaDefaultReceiverApplicationID success:^(MediaLaunchObject *mediaLanchObject) {
+        success(mediaLanchObject.session,mediaLanchObject.mediaControl);
+    } failure:failure];
 }
 
 - (void) playMedia:(MediaInfo *)mediaInfo shouldLoop:(BOOL)shouldLoop success:(MediaPlayerDisplaySuccessBlock)success failure:(FailureBlock)failure
@@ -392,7 +425,29 @@
     [self playMedia:mediaInfo.url iconURL:iconURL title:mediaInfo.title description:mediaInfo.description mimeType:mediaInfo.mimeType shouldLoop:shouldLoop success:success failure:failure];
 }
 
-- (void) playMedia:(GCKMediaInformation *)mediaInformation webAppId:(NSString *)mediaAppId success:(MediaPlayerDisplaySuccessBlock)success failure:(FailureBlock)failure
+- (void) playMediaWithMediaInfo:(MediaInfo *)mediaInfo shouldLoop:(BOOL)shouldLoop success:(MediaPlayerSuccessBlock)success failure:(FailureBlock)failure{
+    NSURL *iconURL;
+    if(mediaInfo.images){
+        ImageInfo *imageInfo = [mediaInfo.images firstObject];
+        iconURL = imageInfo.url;
+    }
+    
+    GCKMediaMetadata *metaData = [[GCKMediaMetadata alloc] initWithMetadataType:GCKMediaMetadataTypeMovie];
+    [metaData setString:mediaInfo.title forKey:kGCKMetadataKeyTitle];
+    [metaData setString:mediaInfo.description forKey:kGCKMetadataKeySubtitle];
+    
+    if (iconURL)
+    {
+        GCKImage *iconImage = [[GCKImage alloc] initWithURL:iconURL width:100 height:100];
+        [metaData addImage:iconImage];
+    }
+    
+    GCKMediaInformation *mediaInformation = [[GCKMediaInformation alloc] initWithContentID:mediaInfo.url.absoluteString streamType:GCKMediaStreamTypeBuffered contentType:mediaInfo.mimeType metadata:metaData streamDuration:1000 customData:nil];
+    
+    [self playMedia:mediaInformation webAppId:kGCKMediaDefaultReceiverApplicationID success:success failure:failure];
+}
+
+- (void) playMedia:(GCKMediaInformation *)mediaInformation webAppId:(NSString *)mediaAppId success:(MediaPlayerSuccessBlock)success failure:(FailureBlock)failure
 {
     WebAppLaunchSuccessBlock webAppLaunchBlock = ^(WebAppSession *webAppSession)
     {
@@ -408,8 +463,10 @@
 
             _castMediaControlChannel.delegate = (CastWebAppSession *) webAppSession;
 
-            if (success)
-                success(webAppSession.launchSession, webAppSession.mediaControl);
+            if (success){
+                    MediaLaunchObject *launchObject = [[MediaLaunchObject alloc] initWithLaunchSession:webAppSession.launchSession andMediaControl:webAppSession.mediaControl];
+                    success(launchObject);
+            }
         }
     };
 
@@ -543,6 +600,7 @@
         failure([ConnectError generateErrorWithCode:ConnectStatusCodeNotSupported andDetails:nil]);
 }
 
+
 #pragma mark - WebAppLauncher
 
 - (id<WebAppLauncher>)webAppLauncher
@@ -653,6 +711,27 @@
         if (failure)
             failure([ConnectError generateErrorWithCode:ConnectStatusCodeTvError andDetails:nil]);
     }
+}
+
+-(void)pinWebApp:(LaunchSession *)launchSession success:(SuccessBlock)success failure:(FailureBlock)failure
+{
+    [self sendNotSupportedFailure:failure];
+}
+
+-(void)unPinWebApp:(NSString *)webAppId success:(SuccessBlock)success failure:(FailureBlock)failure
+{
+    [self sendNotSupportedFailure:failure];
+}
+
+- (void)isWebAppPinned:(NSString *)webAppId success:(WebAppPinStatusBlock)success failure:(FailureBlock)failure
+{
+    [self sendNotSupportedFailure:failure];
+}
+
+- (ServiceSubscription *)subscribeIsWebAppPinned:(NSString*)webAppId success:(WebAppPinStatusBlock)success failure:(FailureBlock)failure
+{
+    [self sendNotSupportedFailure:failure];
+    return nil;
 }
 
 #pragma mark - Volume Control
