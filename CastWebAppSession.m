@@ -34,6 +34,8 @@
 
 @implementation CastWebAppSession
 
+@dynamic service;
+
 - (void) connectWithSuccess:(SuccessBlock)success failure:(FailureBlock)failure
 {
     if (_castServiceChannel)
