@@ -28,6 +28,8 @@
 
 @interface CastService () <ServiceCommandDelegate>
 
+@property (nonatomic, retain, readwrite) GCKDevice *castDevice;
+
 @end
 
 @implementation CastService
@@ -90,9 +92,21 @@
     return YES;
 }
 
+- (void)setServiceDescription:(ServiceDescription *)serviceDescription {
+    [super setServiceDescription:serviceDescription];
+
+    [self updateCapabilities];
+}
+
 - (void) updateCapabilities
 {
     NSArray *capabilities = [NSArray new];
+
+    if (self.castDevice) {
+        NSLog(@"[service] %@: can audio? %d, can video? %d", self.serviceDescription.friendlyName,
+              [self.castDevice hasCapabilities:kGCKDeviceCapabilityAudioOut],
+              [self.castDevice hasCapabilities:kGCKDeviceCapabilityVideoOut]);
+    }
 
     capabilities = [capabilities arrayByAddingObjectsFromArray:kMediaPlayerCapabilities];
     capabilities = [capabilities arrayByAddingObjectsFromArray:kVolumeControlCapabilities];
@@ -136,6 +150,18 @@
     return _castWebAppId;
 }
 
+#pragma mark - Properties
+
+- (GCKDevice *)castDevice {
+    if (!_castDevice && self.serviceDescription) {
+        UInt32 devicePort = (UInt32) self.serviceDescription.port;
+        _castDevice = [[GCKDevice alloc] initWithIPAddress:self.serviceDescription.address
+                                               servicePort:devicePort];
+    }
+
+    return _castDevice;
+}
+
 #pragma mark - Connection
 
 - (void)connect
@@ -143,18 +169,12 @@
     if (self.connected)
         return;
 
-    if (!_castDevice)
-    {
-        UInt32 devicePort = (UInt32) self.serviceDescription.port;
-        _castDevice = [[GCKDevice alloc] initWithIPAddress:self.serviceDescription.address servicePort:devicePort];
-    }
-    
     if (!_castDeviceManager)
     {
         NSDictionary *info = [[NSBundle mainBundle] infoDictionary];
         NSString *clientPackageName = [info objectForKey:@"CFBundleIdentifier"];
         
-        _castDeviceManager = [[GCKDeviceManager alloc] initWithDevice:_castDevice clientPackageName:clientPackageName];
+        _castDeviceManager = [[GCKDeviceManager alloc] initWithDevice:self.castDevice clientPackageName:clientPackageName];
         _castDeviceManager.delegate = self;
     }
     
@@ -200,6 +220,9 @@
     DLog(@"connected");
 
     self.connected = YES;
+    NSLog(@"[connected] %@: can audio? %d, can video? %d", self.serviceDescription.friendlyName,
+          [self.castDevice hasCapabilities:kGCKDeviceCapabilityAudioOut],
+          [self.castDevice hasCapabilities:kGCKDeviceCapabilityVideoOut]);
 
     _castMediaControlChannel = [[GCKMediaControlChannel alloc] init];
     [_castDeviceManager addChannel:_castMediaControlChannel];

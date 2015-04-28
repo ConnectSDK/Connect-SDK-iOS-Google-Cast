@@ -91,7 +91,10 @@
 
     if ([_devices objectForKey:device.deviceID])
         return;
-    
+
+    NSLog(@"[discovery] %@: can audio? %d, can video? %d", device.friendlyName,
+          [device hasCapabilities:kGCKDeviceCapabilityAudioOut],
+          [device hasCapabilities:kGCKDeviceCapabilityVideoOut]);
     ServiceDescription *serviceDescription = [ServiceDescription descriptionWithAddress:device.ipAddress UUID:device.deviceID];
     serviceDescription.serviceId = kConnectSDKCastServiceId;
     serviceDescription.friendlyName = device.friendlyName;
