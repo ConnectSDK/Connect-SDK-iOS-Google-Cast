@@ -34,6 +34,8 @@
 
 @implementation CastWebAppSession
 
+@dynamic service;
+
 - (void) connectWithSuccess:(SuccessBlock)success failure:(FailureBlock)failure
 {
     if (_castServiceChannel)
@@ -442,6 +444,13 @@
         NSArray *images = [metaData objectForKey:@"images"];
         if([images count] > 0){
             [mediaMetaData setObject: [[images firstObject] objectForKey:@"url"] forKey:@"iconURL"];
+        }
+    }else
+    if(metaData.images){
+        NSArray *images = metaData.images;
+        if([images count] > 0){
+            GCKImage *image = [images firstObject];
+            [mediaMetaData setObject:image.URL.absoluteString forKey:@"iconURL"];
         }
         
     }
