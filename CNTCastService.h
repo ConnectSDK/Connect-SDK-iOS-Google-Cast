@@ -18,7 +18,7 @@
 //  limitations under the License.
 //
 
-#define kConnectSDKCastServiceId @"Chromecast"
+#define kCNTConnectSDKCastServiceId @"Chromecast"
 
 #import <GoogleCast/GoogleCast.h>
 #import "CNTCastServiceChannel.h"
@@ -42,7 +42,7 @@
 @property (nonatomic, copy)NSString *castWebAppId;
 
 // @cond INTERNAL
-- (void) playMedia:(GCKMediaInformation *)mediaInformation webAppId:(NSString *)webAppId success:(MediaPlayerSuccessBlock)success failure:(FailureBlock)failure;
+- (void) playMedia:(GCKMediaInformation *)mediaInformation webAppId:(NSString *)webAppId success:(CNTMediaPlayerSuccessBlock)success failure:(CNTFailureBlock)failure;
 // @endcond
 
 @end

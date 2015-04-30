@@ -93,7 +93,7 @@
         return;
     
     CNTServiceDescription *serviceDescription = [CNTServiceDescription descriptionWithAddress:device.ipAddress UUID:device.deviceID];
-    serviceDescription.serviceId = kConnectSDKCastServiceId;
+    serviceDescription.serviceId = kCNTConnectSDKCastServiceId;
     serviceDescription.friendlyName = device.friendlyName;
     serviceDescription.port = device.servicePort;
     serviceDescription.manufacturer = device.manufacturer;

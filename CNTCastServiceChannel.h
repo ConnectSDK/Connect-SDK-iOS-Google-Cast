@@ -27,8 +27,8 @@
 
 @interface CNTCastServiceChannel : GCKCastChannel
 
-@property (nonatomic, copy) SuccessBlock connectionSuccess;
-@property (nonatomic, copy) FailureBlock connectionFailure;
+@property (nonatomic, copy) CNTSuccessBlock connectionSuccess;
+@property (nonatomic, copy) CNTFailureBlock connectionFailure;
 
 - (instancetype)initWithAppId:(NSString *)appId session:(CNTCastWebAppSession *)session;
 

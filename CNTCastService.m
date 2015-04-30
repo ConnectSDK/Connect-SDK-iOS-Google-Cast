@@ -81,7 +81,7 @@
 + (NSDictionary *) discoveryParameters
 {
     return @{
-             @"serviceId":kConnectSDKCastServiceId
+             @"serviceId": kCNTConnectSDKCastServiceId
              };
 }
 
@@ -94,38 +94,38 @@
 {
     NSArray *capabilities = [NSArray new];
 
-    capabilities = [capabilities arrayByAddingObjectsFromArray:kMediaPlayerCapabilities];
-    capabilities = [capabilities arrayByAddingObjectsFromArray:kVolumeControlCapabilities];
+    capabilities = [capabilities arrayByAddingObjectsFromArray:kCNTMediaPlayerCapabilities];
+    capabilities = [capabilities arrayByAddingObjectsFromArray:kCNTVolumeControlCapabilities];
     capabilities = [capabilities arrayByAddingObjectsFromArray:@[
-            kMediaControlPlay,
-            kMediaControlPause,
-            kMediaControlStop,
-            kMediaControlDuration,
-            kMediaControlSeek,
-            kMediaControlPosition,
-            kMediaControlPlayState,
-            kMediaControlPlayStateSubscribe,
-            kMediaControlMetadata,
-            kMediaControlMetadataSubscribe,
+            kCNTMediaControlPlay,
+            kCNTMediaControlPause,
+            kCNTMediaControlStop,
+            kCNTMediaControlDuration,
+            kCNTMediaControlSeek,
+            kCNTMediaControlPosition,
+            kCNTMediaControlPlayState,
+            kCNTMediaControlPlayStateSubscribe,
+            kCNTMediaControlMetadata,
+            kCNTMediaControlMetadataSubscribe,
 
-            kWebAppLauncherLaunch,
-            kWebAppLauncherMessageSend,
-            kWebAppLauncherMessageReceive,
-            kWebAppLauncherMessageSendJSON,
-            kWebAppLauncherMessageReceiveJSON,
-            kWebAppLauncherConnect,
-            kWebAppLauncherDisconnect,
-            kWebAppLauncherJoin,
-            kWebAppLauncherClose
+            kCNTWebAppLauncherLaunch,
+            kCNTWebAppLauncherMessageSend,
+            kCNTWebAppLauncherMessageReceive,
+            kCNTWebAppLauncherMessageSendJSON,
+            kCNTWebAppLauncherMessageReceiveJSON,
+            kCNTWebAppLauncherConnect,
+            kCNTWebAppLauncherDisconnect,
+            kCNTWebAppLauncherJoin,
+            kCNTWebAppLauncherClose
     ]];
 
     [self setCapabilities:capabilities];
 }
 
-- (void) sendNotSupportedFailure:(FailureBlock)failure
+- (void) sendNotSupportedFailure:(CNTFailureBlock)failure
 {
     if (failure)
-        failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeNotSupported andDetails:nil]);
+        failure([CNTConnectError generateErrorWithCode:CNTConnectStatusCodeNotSupported andDetails:nil]);
 }
 
 -(NSString *)castWebAppId
@@ -177,11 +177,11 @@
 
 #pragma mark - Subscriptions
 
-- (int)sendSubscription:(CNTServiceSubscription *)subscription type:(ServiceSubscriptionType)type payload:(id)payload toURL:(NSURL *)URL withId:(int)callId
+- (int)sendSubscription:(CNTServiceSubscription *)subscription type:(CNTServiceSubscriptionType)type payload:(id)payload toURL:(NSURL *)URL withId:(int)callId
 {
-    if (type == ServiceSubscriptionTypeUnsubscribe)
+    if (type == CNTServiceSubscriptionTypeUnsubscribe)
         [_subscriptions removeObject:subscription];
-    else if (type == ServiceSubscriptionTypeSubscribe)
+    else if (type == CNTServiceSubscriptionTypeSubscribe)
         [_subscriptions addObject:subscription];
 
     return callId;
@@ -213,12 +213,12 @@
 
     _currentAppId = applicationMetadata.applicationID;
 
-    WebAppLaunchSuccessBlock success = [_launchSuccessBlocks objectForKey:applicationMetadata.applicationID];
+    CNTWebAppLaunchSuccessBlock success = [_launchSuccessBlocks objectForKey:applicationMetadata.applicationID];
 
     CNTLaunchSession *launchSession = [CNTLaunchSession launchSessionForAppId:applicationMetadata.applicationID];
     launchSession.name = applicationMetadata.applicationName;
     launchSession.sessionId = sessionID;
-    launchSession.sessionType = LaunchSessionTypeWebApp;
+    launchSession.sessionType = CNTLaunchSessionTypeWebApp;
     launchSession.service = self;
 
     CNTCastWebAppSession *webAppSession = [[CNTCastWebAppSession alloc] initWithLaunchSession:launchSession service:self];
@@ -255,7 +255,7 @@
 
     if (_launchingAppId)
     {
-        FailureBlock failure = [_launchFailureBlocks objectForKey:_launchingAppId];
+        CNTFailureBlock failure = [_launchFailureBlocks objectForKey:_launchingAppId];
 
         if (failure)
             dispatch_on_main(^{ failure(error); });
@@ -303,7 +303,7 @@
             {
                 [subscription.successCalls enumerateObjectsUsingBlock:^(id success, NSUInteger successIdx, BOOL *successStop)
                 {
-                    VolumeSuccessBlock volumeSuccess = (VolumeSuccessBlock) success;
+                    CNTVolumeSuccessBlock volumeSuccess = (CNTVolumeSuccessBlock) success;
 
                     if (volumeSuccess)
                         dispatch_on_main(^{ volumeSuccess(volumeLevel); });
@@ -314,7 +314,7 @@
             {
                 [subscription.successCalls enumerateObjectsUsingBlock:^(id success, NSUInteger successIdx, BOOL *successStop)
                 {
-                    MuteSuccessBlock muteSuccess = (MuteSuccessBlock) success;
+                    CNTMuteSuccessBlock muteSuccess = (CNTMuteSuccessBlock) success;
 
                     if (muteSuccess)
                         dispatch_on_main(^{ muteSuccess(isMuted); });
@@ -344,12 +344,12 @@
     return self;
 }
 
-- (CapabilityPriorityLevel)mediaPlayerPriority
+- (CNTCapabilityPriorityLevel)mediaPlayerPriority
 {
-    return CapabilityPriorityLevelHigh;
+    return CNTCapabilityPriorityLevelHigh;
 }
 
-- (void)displayImage:(NSURL *)imageURL iconURL:(NSURL *)iconURL title:(NSString *)title description:(NSString *)description mimeType:(NSString *)mimeType success:(MediaPlayerDisplaySuccessBlock)success failure:(FailureBlock)failure
+- (void)displayImage:(NSURL *)imageURL iconURL:(NSURL *)iconURL title:(NSString *)title description:(NSString *)description mimeType:(NSString *)mimeType success:(CNTMediaPlayerDisplaySuccessBlock)success failure:(CNTFailureBlock)failure
 {
     GCKMediaMetadata *metaData = [[GCKMediaMetadata alloc] initWithMetadataType:GCKMediaMetadataTypePhoto];
     [metaData setString:title forKey:kGCKMetadataKeyTitle];
@@ -369,8 +369,8 @@
 }
 
 - (void) displayImage:(CNTMediaInfo *)mediaInfo
-              success:(MediaPlayerDisplaySuccessBlock)success
-              failure:(FailureBlock)failure
+              success:(CNTMediaPlayerDisplaySuccessBlock)success
+              failure:(CNTFailureBlock)failure
 {
     NSURL *iconURL;
     if(mediaInfo.images){
@@ -381,7 +381,7 @@
     [self displayImage:mediaInfo.url iconURL:iconURL title:mediaInfo.title description:mediaInfo.description mimeType:mediaInfo.mimeType success:success failure:failure];
 }
 
-- (void) displayImageWithMediaInfo:(CNTMediaInfo *)mediaInfo success:(MediaPlayerSuccessBlock)success failure:(FailureBlock)failure
+- (void) displayImageWithMediaInfo:(CNTMediaInfo *)mediaInfo success:(CNTMediaPlayerSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     NSURL *iconURL;
     if(mediaInfo.images){
@@ -404,7 +404,7 @@
     [self playMedia:mediaInformation webAppId:self.castWebAppId success:success failure:failure];
 }
 
-- (void) playMedia:(NSURL *)videoURL iconURL:(NSURL *)iconURL title:(NSString *)title description:(NSString *)description mimeType:(NSString *)mimeType shouldLoop:(BOOL)shouldLoop success:(MediaPlayerDisplaySuccessBlock)success failure:(FailureBlock)failure
+- (void) playMedia:(NSURL *)videoURL iconURL:(NSURL *)iconURL title:(NSString *)title description:(NSString *)description mimeType:(NSString *)mimeType shouldLoop:(BOOL)shouldLoop success:(CNTMediaPlayerDisplaySuccessBlock)success failure:(CNTFailureBlock)failure
 {
     GCKMediaMetadata *metaData = [[GCKMediaMetadata alloc] initWithMetadataType:GCKMediaMetadataTypeMovie];
     [metaData setString:title forKey:kGCKMetadataKeyTitle];
@@ -423,7 +423,7 @@
     } failure:failure];
 }
 
-- (void) playMedia:(CNTMediaInfo *)mediaInfo shouldLoop:(BOOL)shouldLoop success:(MediaPlayerDisplaySuccessBlock)success failure:(FailureBlock)failure
+- (void) playMedia:(CNTMediaInfo *)mediaInfo shouldLoop:(BOOL)shouldLoop success:(CNTMediaPlayerDisplaySuccessBlock)success failure:(CNTFailureBlock)failure
 {
     NSURL *iconURL;
     if(mediaInfo.images){
@@ -433,7 +433,7 @@
     [self playMedia:mediaInfo.url iconURL:iconURL title:mediaInfo.title description:mediaInfo.description mimeType:mediaInfo.mimeType shouldLoop:shouldLoop success:success failure:failure];
 }
 
-- (void) playMediaWithMediaInfo:(CNTMediaInfo *)mediaInfo shouldLoop:(BOOL)shouldLoop success:(MediaPlayerSuccessBlock)success failure:(FailureBlock)failure{
+- (void) playMediaWithMediaInfo:(CNTMediaInfo *)mediaInfo shouldLoop:(BOOL)shouldLoop success:(CNTMediaPlayerSuccessBlock)success failure:(CNTFailureBlock)failure{
     NSURL *iconURL;
     if(mediaInfo.images){
         CNTImageInfo *imageInfo = [mediaInfo.images firstObject];
@@ -455,19 +455,19 @@
     [self playMedia:mediaInformation webAppId:self.castWebAppId success:success failure:failure];
 }
 
-- (void) playMedia:(GCKMediaInformation *)mediaInformation webAppId:(NSString *)mediaAppId success:(MediaPlayerSuccessBlock)success failure:(FailureBlock)failure
+- (void) playMedia:(GCKMediaInformation *)mediaInformation webAppId:(NSString *)mediaAppId success:(CNTMediaPlayerSuccessBlock)success failure:(CNTFailureBlock)failure
 {
-    WebAppLaunchSuccessBlock webAppLaunchBlock = ^(CNTWebAppSession *webAppSession)
+    CNTWebAppLaunchSuccessBlock webAppLaunchBlock = ^(CNTWebAppSession *webAppSession)
     {
         NSInteger result = [_castMediaControlChannel loadMedia:mediaInformation autoplay:YES];
 
         if (result == kGCKInvalidRequestID)
         {
             if (failure)
-                failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeTvError andDetails:nil]);
+                failure([CNTConnectError generateErrorWithCode:CNTConnectStatusCodeTvError andDetails:nil]);
         } else
         {
-            webAppSession.launchSession.sessionType = LaunchSessionTypeMedia;
+            webAppSession.launchSession.sessionType = CNTLaunchSessionTypeMedia;
 
             _castMediaControlChannel.delegate = (CNTCastWebAppSession *) webAppSession;
 
@@ -493,11 +493,11 @@
         [_launchFailureBlocks removeObjectForKey:mediaAppId];
 
         if (failure)
-            failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeTvError andDetails:nil]);
+            failure([CNTConnectError generateErrorWithCode:CNTConnectStatusCodeTvError andDetails:nil]);
     }
 }
 
-- (void)closeMedia:(CNTLaunchSession *)launchSession success:(SuccessBlock)success failure:(FailureBlock)failure
+- (void)closeMedia:(CNTLaunchSession *)launchSession success:(CNTSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     BOOL result = [_castDeviceManager stopApplicationWithSessionID:launchSession.sessionId];
 
@@ -508,7 +508,7 @@
     } else
     {
         if (failure)
-            failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeTvError andDetails:nil]);
+            failure([CNTConnectError generateErrorWithCode:CNTConnectStatusCodeTvError andDetails:nil]);
     }
 }
 
@@ -519,12 +519,12 @@
     return self;
 }
 
-- (CapabilityPriorityLevel)mediaControlPriority
+- (CNTCapabilityPriorityLevel)mediaControlPriority
 {
-    return CapabilityPriorityLevelHigh;
+    return CNTCapabilityPriorityLevelHigh;
 }
 
-- (void)playWithSuccess:(SuccessBlock)success failure:(FailureBlock)failure
+- (void)playWithSuccess:(CNTSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     NSInteger result;
 
@@ -548,7 +548,7 @@
     }
 }
 
-- (void)pauseWithSuccess:(SuccessBlock)success failure:(FailureBlock)failure
+- (void)pauseWithSuccess:(CNTSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     NSInteger result;
 
@@ -572,7 +572,7 @@
     }
 }
 
-- (void)stopWithSuccess:(SuccessBlock)success failure:(FailureBlock)failure
+- (void)stopWithSuccess:(CNTSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     NSInteger result;
 
@@ -596,37 +596,37 @@
     }
 }
 
-- (void)rewindWithSuccess:(SuccessBlock)success failure:(FailureBlock)failure
+- (void)rewindWithSuccess:(CNTSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     if (failure)
-        failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeNotSupported andDetails:nil]);
+        failure([CNTConnectError generateErrorWithCode:CNTConnectStatusCodeNotSupported andDetails:nil]);
 }
 
-- (void)fastForwardWithSuccess:(SuccessBlock)success failure:(FailureBlock)failure
+- (void)fastForwardWithSuccess:(CNTSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     if (failure)
-        failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeNotSupported andDetails:nil]);
+        failure([CNTConnectError generateErrorWithCode:CNTConnectStatusCodeNotSupported andDetails:nil]);
 }
 
 
-#pragma mark - WebAppLauncher
+#pragma mark - CNTWebAppLauncher
 
 - (id<CNTWebAppLauncher>)webAppLauncher
 {
     return self;
 }
 
-- (CapabilityPriorityLevel)webAppLauncherPriority
+- (CNTCapabilityPriorityLevel)webAppLauncherPriority
 {
-    return CapabilityPriorityLevelHigh;
+    return CNTCapabilityPriorityLevelHigh;
 }
 
-- (void)launchWebApp:(NSString *)webAppId success:(WebAppLaunchSuccessBlock)success failure:(FailureBlock)failure
+- (void)launchWebApp:(NSString *)webAppId success:(CNTWebAppLaunchSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     [self launchWebApp:webAppId relaunchIfRunning:YES success:success failure:failure];
 }
 
-- (void)launchWebApp:(NSString *)webAppId relaunchIfRunning:(BOOL)relaunchIfRunning success:(WebAppLaunchSuccessBlock)success failure:(FailureBlock)failure
+- (void)launchWebApp:(NSString *)webAppId relaunchIfRunning:(BOOL)relaunchIfRunning success:(CNTWebAppLaunchSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     [_launchSuccessBlocks removeObjectForKey:webAppId];
     [_launchFailureBlocks removeObjectForKey:webAppId];
@@ -648,27 +648,27 @@
         _launchingAppId = nil;
 
         if (failure)
-            failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeTvError andDetails:@"Could not detect if web app launched -- make sure you have the Google Cast Receiver JavaScript file in your web app"]);
+            failure([CNTConnectError generateErrorWithCode:CNTConnectStatusCodeTvError andDetails:@"Could not detect if web app launched -- make sure you have the Google Cast Receiver JavaScript file in your web app"]);
     }
 }
 
-- (void)launchWebApp:(NSString *)webAppId params:(NSDictionary *)params success:(WebAppLaunchSuccessBlock)success failure:(FailureBlock)failure
+- (void)launchWebApp:(NSString *)webAppId params:(NSDictionary *)params success:(CNTWebAppLaunchSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     if (failure)
-        failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeNotSupported andDetails:nil]);
+        failure([CNTConnectError generateErrorWithCode:CNTConnectStatusCodeNotSupported andDetails:nil]);
 }
 
-- (void)launchWebApp:(NSString *)webAppId params:(NSDictionary *)params relaunchIfRunning:(BOOL)relaunchIfRunning success:(WebAppLaunchSuccessBlock)success failure:(FailureBlock)failure
+- (void)launchWebApp:(NSString *)webAppId params:(NSDictionary *)params relaunchIfRunning:(BOOL)relaunchIfRunning success:(CNTWebAppLaunchSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     if (failure)
-        failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeNotSupported andDetails:nil]);
+        failure([CNTConnectError generateErrorWithCode:CNTConnectStatusCodeNotSupported andDetails:nil]);
 }
 
-- (void)joinWebApp:(CNTLaunchSession *)webAppLaunchSession success:(WebAppLaunchSuccessBlock)success failure:(FailureBlock)failure
+- (void)joinWebApp:(CNTLaunchSession *)webAppLaunchSession success:(CNTWebAppLaunchSuccessBlock)success failure:(CNTFailureBlock)failure
 {
-    WebAppLaunchSuccessBlock mySuccess = ^(CNTWebAppSession *webAppSession)
+    CNTWebAppLaunchSuccessBlock mySuccess = ^(CNTWebAppSession *webAppSession)
     {
-        SuccessBlock joinSuccess = ^(id responseObject)
+        CNTSuccessBlock joinSuccess = ^(id responseObject)
         {
             if (success)
                 success(webAppSession);
@@ -693,20 +693,20 @@
         _launchingAppId = nil;
 
         if (failure)
-            failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeTvError andDetails:@"Could not detect if web app launched -- make sure you have the Google Cast Receiver JavaScript file in your web app"]);
+            failure([CNTConnectError generateErrorWithCode:CNTConnectStatusCodeTvError andDetails:@"Could not detect if web app launched -- make sure you have the Google Cast Receiver JavaScript file in your web app"]);
     }
 }
 
-- (void) joinWebAppWithId:(NSString *)webAppId success:(WebAppLaunchSuccessBlock)success failure:(FailureBlock)failure
+- (void) joinWebAppWithId:(NSString *)webAppId success:(CNTWebAppLaunchSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     CNTLaunchSession *launchSession = [CNTLaunchSession launchSessionForAppId:webAppId];
-    launchSession.sessionType = LaunchSessionTypeWebApp;
+    launchSession.sessionType = CNTLaunchSessionTypeWebApp;
     launchSession.service = self;
 
     [self joinWebApp:launchSession success:success failure:failure];
 }
 
-- (void)closeWebApp:(CNTLaunchSession *)launchSession success:(SuccessBlock)success failure:(FailureBlock)failure
+- (void)closeWebApp:(CNTLaunchSession *)launchSession success:(CNTSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     BOOL result = [self.castDeviceManager stopApplication];
 
@@ -717,26 +717,26 @@
     } else
     {
         if (failure)
-            failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeTvError andDetails:nil]);
+            failure([CNTConnectError generateErrorWithCode:CNTConnectStatusCodeTvError andDetails:nil]);
     }
 }
 
-- (void) pinWebApp:(NSString *)webAppId success:(SuccessBlock)success failure:(FailureBlock)failure
+- (void) pinWebApp:(NSString *)webAppId success:(CNTSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     [self sendNotSupportedFailure:failure];
 }
 
--(void)unPinWebApp:(NSString *)webAppId success:(SuccessBlock)success failure:(FailureBlock)failure
+-(void)unPinWebApp:(NSString *)webAppId success:(CNTSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     [self sendNotSupportedFailure:failure];
 }
 
-- (void)isWebAppPinned:(NSString *)webAppId success:(WebAppPinStatusBlock)success failure:(FailureBlock)failure
+- (void)isWebAppPinned:(NSString *)webAppId success:(CNTWebAppPinStatusBlock)success failure:(CNTFailureBlock)failure
 {
     [self sendNotSupportedFailure:failure];
 }
 
-- (CNTServiceSubscription *)subscribeIsWebAppPinned:(NSString*)webAppId success:(WebAppPinStatusBlock)success failure:(FailureBlock)failure
+- (CNTServiceSubscription *)subscribeIsWebAppPinned:(NSString*)webAppId success:(CNTWebAppPinStatusBlock)success failure:(CNTFailureBlock)failure
 {
     [self sendNotSupportedFailure:failure];
     return nil;
@@ -749,12 +749,12 @@
     return self;
 }
 
-- (CapabilityPriorityLevel)volumeControlPriority
+- (CNTCapabilityPriorityLevel)volumeControlPriority
 {
-    return CapabilityPriorityLevelHigh;
+    return CNTCapabilityPriorityLevelHigh;
 }
 
-- (void)volumeUpWithSuccess:(SuccessBlock)success failure:(FailureBlock)failure
+- (void)volumeUpWithSuccess:(CNTSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     [self getVolumeWithSuccess:^(float volume)
     {
@@ -774,7 +774,7 @@
     } failure:failure];
 }
 
-- (void)volumeDownWithSuccess:(SuccessBlock)success failure:(FailureBlock)failure
+- (void)volumeDownWithSuccess:(CNTSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     [self getVolumeWithSuccess:^(float volume)
     {
@@ -794,14 +794,14 @@
     } failure:failure];
 }
 
-- (void)setMute:(BOOL)mute success:(SuccessBlock)success failure:(FailureBlock)failure
+- (void)setMute:(BOOL)mute success:(CNTSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     NSInteger result = [self.castDeviceManager setMuted:mute];
 
     if (result == kGCKInvalidRequestID)
     {
         if (failure)
-            [CNTConnectError generateErrorWithCode:ConnectStatusCodeTvError andDetails:nil];
+            [CNTConnectError generateErrorWithCode:CNTConnectStatusCodeTvError andDetails:nil];
     } else
     {
         [self.castDeviceManager requestDeviceStatus];
@@ -811,7 +811,7 @@
     }
 }
 
-- (void)getMuteWithSuccess:(MuteSuccessBlock)success failure:(FailureBlock)failure
+- (void)getMuteWithSuccess:(CNTMuteSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     if (_currentMuteStatus)
     {
@@ -820,11 +820,11 @@
     } else
     {
         if (failure)
-            failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeTvError andDetails:@"Cannot get this information without media loaded"]);
+            failure([CNTConnectError generateErrorWithCode:CNTConnectStatusCodeTvError andDetails:@"Cannot get this information without media loaded"]);
     }
 }
 
-- (CNTServiceSubscription *)subscribeMuteWithSuccess:(MuteSuccessBlock)success failure:(FailureBlock)failure
+- (CNTServiceSubscription *)subscribeMuteWithSuccess:(CNTMuteSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     if (_currentMuteStatus)
     {
@@ -840,7 +840,7 @@
     return subscription;
 }
 
-- (void)setVolume:(float)volume success:(SuccessBlock)success failure:(FailureBlock)failure
+- (void)setVolume:(float)volume success:(CNTSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     NSInteger result;
     NSString *failureMessage;
@@ -858,7 +858,7 @@
     if (result == kGCKInvalidRequestID)
     {
         if (failure)
-            [CNTConnectError generateErrorWithCode:ConnectStatusCodeTvError andDetails:failureMessage];
+            [CNTConnectError generateErrorWithCode:CNTConnectStatusCodeTvError andDetails:failureMessage];
     } else
     {
         [self.castDeviceManager requestDeviceStatus];
@@ -868,7 +868,7 @@
     }
 }
 
-- (void)getVolumeWithSuccess:(VolumeSuccessBlock)success failure:(FailureBlock)failure
+- (void)getVolumeWithSuccess:(CNTVolumeSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     if (_currentVolumeLevel)
     {
@@ -877,11 +877,11 @@
     } else
     {
         if (failure)
-            failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeTvError andDetails:@"Cannot get this information without media loaded"]);
+            failure([CNTConnectError generateErrorWithCode:CNTConnectStatusCodeTvError andDetails:@"Cannot get this information without media loaded"]);
     }
 }
 
-- (CNTServiceSubscription *)subscribeVolumeWithSuccess:(VolumeSuccessBlock)success failure:(FailureBlock)failure
+- (CNTServiceSubscription *)subscribeVolumeWithSuccess:(CNTVolumeSuccessBlock)success failure:(CNTFailureBlock)failure
 {
     if (_currentVolumeLevel)
     {
