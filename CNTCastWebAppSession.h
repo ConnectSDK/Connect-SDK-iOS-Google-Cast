@@ -1,5 +1,5 @@
 //
-//  CastWebAppSession.h
+//  CNTCastWebAppSession.h
 //  Connect SDK
 //
 //  Created by Jeremy White on 2/23/14.
@@ -19,16 +19,16 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "CastService.h"
-#import "WebAppSession.h"
-#import "MediaControl.h"
-#import "CastServiceChannel.h"
+#import "CNTCastService.h"
+#import "CNTWebAppSession.h"
+#import "CNTMediaControl.h"
+#import "CNTCastServiceChannel.h"
 
 
-@interface CastWebAppSession : WebAppSession <GCKMediaControlChannelDelegate>
+@interface CNTCastWebAppSession : CNTWebAppSession <GCKMediaControlChannelDelegate>
 
-@property (nonatomic, readonly) CastService *service;
+@property (nonatomic, readonly) CNTCastService *service;
 @property (nonatomic) GCKApplicationMetadata *metadata;
-@property (nonatomic, readonly) CastServiceChannel *castServiceChannel;
+@property (nonatomic, readonly) CNTCastServiceChannel *castServiceChannel;
 
 @end

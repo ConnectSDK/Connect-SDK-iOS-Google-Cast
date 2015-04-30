@@ -1,5 +1,5 @@
 //
-//  CastServiceChannel.m
+//  CNTCastServiceChannel.m
 //  Connect SDK
 //
 //  Created by Jeremy White on 2/20/14.
@@ -18,16 +18,16 @@
 //  limitations under the License.
 //
 
-#import "CastServiceChannel.h"
-#import "ConnectError.h"
-#import "CastWebAppSession.h"
+#import "CNTCastServiceChannel.h"
+#import "CNTConnectError.h"
+#import "CNTCastWebAppSession.h"
 
-@implementation CastServiceChannel
+@implementation CNTCastServiceChannel
 {
-    __weak CastWebAppSession *_session;
+    __weak CNTCastWebAppSession *_session;
 }
 
-- (instancetype)initWithAppId:(NSString *)appId session:(CastWebAppSession *)session
+- (instancetype)initWithAppId:(NSString *)appId session:(CNTCastWebAppSession *)session
 {
     self = [super initWithNamespace:@"urn:x-cast:com.connectsdk"];
 

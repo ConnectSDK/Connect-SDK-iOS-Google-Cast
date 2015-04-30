@@ -1,8 +1,8 @@
 //
-//  CastServiceChannel.h
+//  CNTCastDiscoveryProvider.h
 //  Connect SDK
 //
-//  Created by Jeremy White on 2/20/14.
+//  Created by Jeremy White on 2/7/14.
 //  Copyright (c) 2014 LG Electronics.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,18 +18,8 @@
 //  limitations under the License.
 //
 
-#import <Foundation/Foundation.h>
-#import <GoogleCast/GoogleCast.h>
-#import "Capability.h"
-#import "WebAppLauncher.h"
+#import "CNTDiscoveryProvider.h"
 
-@class CastWebAppSession;
-
-@interface CastServiceChannel : GCKCastChannel
-
-@property (nonatomic, copy) SuccessBlock connectionSuccess;
-@property (nonatomic, copy) FailureBlock connectionFailure;
-
-- (instancetype)initWithAppId:(NSString *)appId session:(CastWebAppSession *)session;
+@interface CNTCastDiscoveryProvider : CNTDiscoveryProvider
 
 @end

@@ -1,5 +1,5 @@
 //
-//  CastWebAppSession.m
+//  CNTCastWebAppSession.m
 //  Connect SDK
 //
 //  Created by Jeremy White on 2/23/14.
@@ -18,21 +18,21 @@
 //  limitations under the License.
 //
 
-#import "CastWebAppSession.h"
-#import "ConnectError.h"
+#import "CNTCastWebAppSession.h"
+#import "CNTConnectError.h"
 
 
-@interface CastWebAppSession () <GCKMediaControlChannelDelegate>
+@interface CNTCastWebAppSession () <GCKMediaControlChannelDelegate>
 {
     MediaPlayStateSuccessBlock _immediatePlayStateCallback;
 
-    ServiceSubscription *_playStateSubscription;
-    ServiceSubscription *_mediaInfoSubscription;
+    CNTServiceSubscription *_playStateSubscription;
+    CNTServiceSubscription *_mediaInfoSubscription;
 }
 
 @end
 
-@implementation CastWebAppSession
+@implementation CNTCastWebAppSession
 
 @dynamic service;
 
@@ -48,7 +48,7 @@
             failure(error);
     };
     
-    _castServiceChannel = [[CastServiceChannel alloc] initWithAppId:self.launchSession.appId session:self];
+    _castServiceChannel = [[CNTCastServiceChannel alloc] initWithAppId:self.launchSession.appId session:self];
 
     // clean up old instance of channel, if it exists
     [self.service.castDeviceManager removeChannel:_castServiceChannel];
@@ -77,7 +77,7 @@
 
 #pragma mark - ServiceCommandDelegate
 
-- (int)sendSubscription:(ServiceSubscription *)subscription type:(ServiceSubscriptionType)type payload:(id)payload toURL:(NSURL *)URL withId:(int)callId
+- (int)sendSubscription:(CNTServiceSubscription *)subscription type:(ServiceSubscriptionType)type payload:(id)payload toURL:(NSURL *)URL withId:(int)callId
 {
     if (type == ServiceSubscriptionTypeUnsubscribe)
     {
@@ -97,7 +97,7 @@
     if (message == nil)
     {
         if (failure)
-            failure([ConnectError generateErrorWithCode:ConnectStatusCodeArgumentError andDetails:@"Cannot send nil message."]);
+            failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeArgumentError andDetails:@"Cannot send nil message."]);
 
         return;
     }
@@ -105,7 +105,7 @@
     if (_castServiceChannel == nil)
     {
         if (failure)
-            failure([ConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"Cannot send a message to the web app without first connecting"]);
+            failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"Cannot send a message to the web app without first connecting"]);
 
         return;
     }
@@ -119,7 +119,7 @@
     } else
     {
         if (failure)
-            failure([ConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"Message could not be sent at this time."]);
+            failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"Message could not be sent at this time."]);
     }
 }
 
@@ -128,7 +128,7 @@
     if (message == nil)
     {
         if (failure)
-            failure([ConnectError generateErrorWithCode:ConnectStatusCodeArgumentError andDetails:@"Cannot send nil message."]);
+            failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeArgumentError andDetails:@"Cannot send nil message."]);
 
         return;
     }
@@ -139,7 +139,7 @@
     if (error || messageData == nil)
     {
         if (failure)
-            failure([ConnectError generateErrorWithCode:ConnectStatusCodeArgumentError andDetails:@"Failed to parse message dictionary into a JSON object."]);
+            failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeArgumentError andDetails:@"Failed to parse message dictionary into a JSON object."]);
 
         return;
     } else
@@ -214,7 +214,7 @@
 
 #pragma mark - Media Player
 
-- (id <MediaPlayer>) mediaPlayer
+- (id <CNTMediaPlayer>) mediaPlayer
 {
     return self;
 }
@@ -227,47 +227,47 @@
 - (void) displayImage:(NSURL *)imageURL iconURL:(NSURL *)iconURL title:(NSString *)title description:(NSString *)description mimeType:(NSString *)mimeType success:(MediaPlayerDisplaySuccessBlock)success failure:(FailureBlock)failure
 {
     if (failure)
-        failure([ConnectError generateErrorWithCode:ConnectStatusCodeArgumentError andDetails:nil]);
+        failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeArgumentError andDetails:nil]);
 }
 
-- (void) displayImage:(MediaInfo *)mediaInfo
+- (void) displayImage:(CNTMediaInfo *)mediaInfo
               success:(MediaPlayerDisplaySuccessBlock)success
               failure:(FailureBlock)failure
 {
     if (failure)
-        failure([ConnectError generateErrorWithCode:ConnectStatusCodeArgumentError andDetails:nil]);
+        failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeArgumentError andDetails:nil]);
 }
 
 - (void) playMedia:(NSURL *)mediaURL iconURL:(NSURL *)iconURL title:(NSString *)title description:(NSString *)description mimeType:(NSString *)mimeType shouldLoop:(BOOL)shouldLoop success:(MediaPlayerDisplaySuccessBlock)success failure:(FailureBlock)failure
 {
     
-    MediaInfo *mediaInfo = [[MediaInfo alloc] initWithURL:mediaURL mimeType:mimeType];
+    CNTMediaInfo *mediaInfo = [[CNTMediaInfo alloc] initWithURL:mediaURL mimeType:mimeType];
     mediaInfo.title = title;
     mediaInfo.description = description;
-    ImageInfo *imageInfo = [[ImageInfo alloc] initWithURL:iconURL type:ImageTypeThumb];
+    CNTImageInfo *imageInfo = [[CNTImageInfo alloc] initWithURL:iconURL type:ImageTypeThumb];
     [mediaInfo addImage:imageInfo];
     
-    [self playMediaWithMediaInfo:mediaInfo shouldLoop:shouldLoop success:^(MediaLaunchObject *mediaLanchObject) {
+    [self playMediaWithMediaInfo:mediaInfo shouldLoop:shouldLoop success:^(CNTMediaLaunchObject *mediaLanchObject) {
         success(mediaLanchObject.session,mediaLanchObject.mediaControl);
     } failure:failure];
     
 }
 
-- (void) playMedia:(MediaInfo *)mediaInfo shouldLoop:(BOOL)shouldLoop success:(MediaPlayerDisplaySuccessBlock)success failure:(FailureBlock)failure
+- (void) playMedia:(CNTMediaInfo *)mediaInfo shouldLoop:(BOOL)shouldLoop success:(MediaPlayerDisplaySuccessBlock)success failure:(FailureBlock)failure
 {
     NSURL *iconURL;
     if(mediaInfo.images){
-        ImageInfo *imageInfo = [mediaInfo.images firstObject];
+        CNTImageInfo *imageInfo = [mediaInfo.images firstObject];
         iconURL = imageInfo.url;
     }
     [self playMedia:mediaInfo.url iconURL:iconURL title:mediaInfo.title description:mediaInfo.description mimeType:mediaInfo.mimeType shouldLoop:shouldLoop success:success failure:failure];
 }
 
-- (void)playMediaWithMediaInfo:(MediaInfo *)mediaInfo shouldLoop:(BOOL)shouldLoop success:(MediaPlayerSuccessBlock)success failure:(FailureBlock)failure
+- (void)playMediaWithMediaInfo:(CNTMediaInfo *)mediaInfo shouldLoop:(BOOL)shouldLoop success:(MediaPlayerSuccessBlock)success failure:(FailureBlock)failure
 {
     NSURL *iconURL;
     if(mediaInfo.images){
-        ImageInfo *imageInfo = [mediaInfo.images firstObject];
+        CNTImageInfo *imageInfo = [mediaInfo.images firstObject];
         iconURL = imageInfo.url;
     }
     
@@ -283,7 +283,7 @@
     
     GCKMediaInformation *mediaInformation = [[GCKMediaInformation alloc] initWithContentID:mediaInfo.url.absoluteString streamType:GCKMediaStreamTypeBuffered contentType:mediaInfo.mimeType metadata:metaData streamDuration:1000 customData:nil];
     
-    [self.service playMedia:mediaInformation webAppId:self.launchSession.appId success:^(MediaLaunchObject *mediaLanchObject){
+    [self.service playMedia:mediaInformation webAppId:self.launchSession.appId success:^(CNTMediaLaunchObject *mediaLanchObject){
          self.launchSession.sessionId = mediaLanchObject.session.sessionId;
         mediaLanchObject.session = self.launchSession;
         mediaLanchObject.mediaControl = self.mediaControl;
@@ -293,14 +293,14 @@
     
 }
 
-- (void) closeMedia:(LaunchSession *)launchSession success:(SuccessBlock)success failure:(FailureBlock)failure
+- (void) closeMedia:(CNTLaunchSession *)launchSession success:(SuccessBlock)success failure:(FailureBlock)failure
 {
     [self closeWithSuccess:success failure:failure];
 }
 
 #pragma mark - Media Control
 
-- (id <MediaControl>)mediaControl
+- (id <CNTMediaControl>)mediaControl
 {
     return self;
 }
@@ -319,7 +319,7 @@
     } else
     {
         if (failure)
-            failure([ConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"There is no media currently available"]);
+            failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"There is no media currently available"]);
     }
 }
 
@@ -328,7 +328,7 @@
     if (!self.service.castMediaControlChannel.mediaStatus)
     {
         if (failure)
-            failure([ConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"There is no media currently available"]);
+            failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"There is no media currently available"]);
 
         return;
     }
@@ -338,7 +338,7 @@
     if (result == kGCKInvalidRequestID)
     {
         if (failure)
-            failure([ConnectError generateErrorWithCode:ConnectStatusCodeTvError andDetails:nil]);
+            failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeTvError andDetails:nil]);
     } else
     {
         if (success)
@@ -351,7 +351,7 @@
     if (!self.service.castMediaControlChannel.mediaStatus)
     {
         if (failure)
-            failure([ConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"There is no media currently available"]);
+            failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"There is no media currently available"]);
 
         return;
     }
@@ -365,14 +365,14 @@
         _immediatePlayStateCallback = nil;
 
         if (failure)
-            failure([ConnectError generateErrorWithCode:ConnectStatusCodeTvError andDetails:nil]);
+            failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeTvError andDetails:nil]);
     }
 }
 
-- (ServiceSubscription *)subscribePlayStateWithSuccess:(MediaPlayStateSuccessBlock)success failure:(FailureBlock)failure
+- (CNTServiceSubscription *)subscribePlayStateWithSuccess:(MediaPlayStateSuccessBlock)success failure:(FailureBlock)failure
 {
     if (!_playStateSubscription)
-        _playStateSubscription = [ServiceSubscription subscriptionWithDelegate:self target:nil payload:nil callId:-1];
+        _playStateSubscription = [CNTServiceSubscription subscriptionWithDelegate:self target:nil payload:nil callId:-1];
 
     [_playStateSubscription addSuccess:success];
     [_playStateSubscription addFailure:failure];
@@ -391,7 +391,7 @@
     } else
     {
         if (failure)
-            failure([ConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"There is no media currently available"]);
+            failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"There is no media currently available"]);
     }
 }
 
@@ -413,13 +413,13 @@
     } else
     {
         if (failure)
-            failure([ConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"There is no media currently available"]);
+            failure([CNTConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"There is no media currently available"]);
     }
 }
 
-- (ServiceSubscription *)subscribeMediaInfoWithSuccess:(SuccessBlock)success failure:(FailureBlock)failure{
+- (CNTServiceSubscription *)subscribeMediaInfoWithSuccess:(SuccessBlock)success failure:(FailureBlock)failure{
     if (!_mediaInfoSubscription)
-        _mediaInfoSubscription = [ServiceSubscription subscriptionWithDelegate:self target:nil payload:nil callId:-1];
+        _mediaInfoSubscription = [CNTServiceSubscription subscriptionWithDelegate:self target:nil payload:nil callId:-1];
     
     [_mediaInfoSubscription addSuccess:success];
     [_mediaInfoSubscription addFailure:failure];

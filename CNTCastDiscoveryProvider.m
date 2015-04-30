@@ -1,5 +1,5 @@
 //
-//  CastDiscoveryProvider.m
+//  CNTCastDiscoveryProvider.m
 //  Connect SDK
 //
 //  Created by Jeremy White on 2/7/14.
@@ -18,12 +18,12 @@
 //  limitations under the License.
 //
 
-#import "CastDiscoveryProvider.h"
+#import "CNTCastDiscoveryProvider.h"
 #import <GoogleCast/GoogleCast.h>
-#import "ServiceDescription.h"
-#import "CastService.h"
+#import "CNTServiceDescription.h"
+#import "CNTCastService.h"
 
-@interface CastDiscoveryProvider () <GCKDeviceScannerListener>
+@interface CNTCastDiscoveryProvider () <GCKDeviceScannerListener>
 {
     GCKDeviceScanner *_deviceScanner;
     NSMutableDictionary *_devices;
@@ -32,7 +32,7 @@
 
 @end
 
-@implementation CastDiscoveryProvider
+@implementation CNTCastDiscoveryProvider
 
 - (instancetype) init
 {
@@ -92,7 +92,7 @@
     if ([_devices objectForKey:device.deviceID])
         return;
     
-    ServiceDescription *serviceDescription = [ServiceDescription descriptionWithAddress:device.ipAddress UUID:device.deviceID];
+    CNTServiceDescription *serviceDescription = [CNTServiceDescription descriptionWithAddress:device.ipAddress UUID:device.deviceID];
     serviceDescription.serviceId = kConnectSDKCastServiceId;
     serviceDescription.friendlyName = device.friendlyName;
     serviceDescription.port = device.servicePort;
@@ -115,7 +115,7 @@
     if (![_devices objectForKey:device.deviceID])
         return;
     
-    ServiceDescription *serviceDescription = [_deviceDescriptions objectForKey:device.deviceID];
+    CNTServiceDescription *serviceDescription = [_deviceDescriptions objectForKey:device.deviceID];
 
     dispatch_async(dispatch_get_main_queue(), ^
     {

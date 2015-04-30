@@ -1,5 +1,5 @@
 //
-//  CastService.h
+//  CNTCastService.h
 //  Connect SDK
 //
 //  Created by Jeremy White on 2/7/14.
@@ -21,24 +21,24 @@
 #define kConnectSDKCastServiceId @"Chromecast"
 
 #import <GoogleCast/GoogleCast.h>
-#import "CastServiceChannel.h"
-#import "VolumeControl.h"
+#import "CNTCastServiceChannel.h"
+#import "CNTVolumeControl.h"
 
-@interface CastService : DeviceService <GCKDeviceManagerDelegate, MediaPlayer, MediaControl, VolumeControl, WebAppLauncher>
+@interface CNTCastService : CNTDeviceService <GCKDeviceManagerDelegate, CNTMediaPlayer, CNTMediaControl, CNTVolumeControl, CNTWebAppLauncher>
 
-/*! The GCKDeviceManager that CastService is using internally to manage devices. */
+/*! The GCKDeviceManager that CNTCastService is using internally to manage devices. */
 @property (nonatomic, retain, readonly) GCKDeviceManager *castDeviceManager;
 
-/*! The GCKDevice object that CastService is using internally for device information. */
+/*! The GCKDevice object that CNTCastService is using internally for device information. */
 @property (nonatomic, retain, readonly) GCKDevice *castDevice;
 
-/*! The CastServiceChannel is used for app-to-app communication that is handling by the Connect SDK JavaScript Bridge. */
-@property (nonatomic, retain, readonly) CastServiceChannel *castServiceChannel;
+/*! The CNTCastServiceChannel is used for app-to-app communication that is handling by the Connect SDK JavaScript Bridge. */
+@property (nonatomic, retain, readonly) CNTCastServiceChannel *castServiceChannel;
 
-/*! The GCKMediaControlChannel that the CastService is using to send media events to the connected web app. */
+/*! The GCKMediaControlChannel that the CNTCastService is using to send media events to the connected web app. */
 @property (nonatomic, retain, readonly) GCKMediaControlChannel *castMediaControlChannel;
 
-/*! The CastService will launch the specified web app id. */
+/*! The CNTCastService will launch the specified web app id. */
 @property (nonatomic, copy)NSString *castWebAppId;
 
 // @cond INTERNAL
