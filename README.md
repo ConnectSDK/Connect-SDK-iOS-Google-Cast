@@ -19,7 +19,7 @@ For more information about Connect SDK, visit the [main repository](https://gith
 5. In Connect SDK Lite's `ConnectSDKDefaultPlatforms.h` file, add a reference to the `CastService` and `CastDiscoveryProvider` classes, respectively.
 
 ##License
-Copyright (c) 2013-2014 LG Electronics.
+Copyright (c) 2013-2015 LG Electronics.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
