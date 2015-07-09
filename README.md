@@ -6,11 +6,10 @@ For more information about Connect SDK, visit the [main repository](https://gith
 
 ##Setup
 ###Connect SDK Integration
-1. Go to the [Google Cast Developer site](https://developers.google.com/cast/docs/downloads) and download the iOS sender library
-2. Extract the GoogleCast.framework bundle from the downloaded ZIP file
-3. Move the framework bundle into your google-cast folder
-4. Add GoogleCast.framework and MediaAccessibility.framework to `Link Binary With Libraries` section
-4. Run your project
+1. Go to the [Google Cast Developer site](https://developers.google.com/cast/docs/developers#libraries) and download the iOS sender library
+2. Extract the `GoogleCast.framework` bundle from the downloaded zip file
+3. Move the framework bundle into your `modules/google-cast/` directory
+4. Link `GoogleCast.framework` with your application target
 
 ###Connect SDK Lite Integration
 1. Clone this repository into a subfolder of the Connect SDK Lite project
@@ -20,7 +19,7 @@ For more information about Connect SDK, visit the [main repository](https://gith
 5. In Connect SDK Lite's `ConnectSDKDefaultPlatforms.h` file, add a reference to the `CastService` and `CastDiscoveryProvider` classes, respectively.
 
 ##License
-Copyright (c) 2013-2014 LG Electronics.
+Copyright (c) 2013-2015 LG Electronics.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
