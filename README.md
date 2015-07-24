@@ -18,6 +18,10 @@ For more information about Connect SDK, visit the [main repository](https://gith
 4. Follow the steps above for Connect SDK integration
 5. In Connect SDK Lite's `ConnectSDKDefaultPlatforms.h` file, add a reference to the `CastService` and `CastDiscoveryProvider` classes, respectively.
 
+##Limitations/Caveats
+
+- Subtitles support (`VTT` format only): the server providing subtitles should support CORS headers, otherwise they are not displayed. The simplest change is to send this HTTP response header for your subtitles: `Access-Control-Allow-Origin: *`. More information is here: [https://developers.google.com/cast/docs/ios_sender#cors-requirements](https://developers.google.com/cast/docs/ios_sender#cors-requirements).
+
 ##License
 Copyright (c) 2013-2015 LG Electronics.
 
