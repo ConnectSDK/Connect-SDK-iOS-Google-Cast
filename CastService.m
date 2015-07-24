@@ -18,13 +18,18 @@
 //  limitations under the License.
 //
 
-#import <GoogleCast/GoogleCast.h>
-#import "CastService.h"
+#import "CastService_Private.h"
+
 #import "ConnectError.h"
 #import "CastWebAppSession.h"
+#import "SubtitleTrack.h"
 
 #define kCastServiceMuteSubscriptionName @"mute"
 #define kCastServiceVolumeSubscriptionName @"volume"
+
+static const NSInteger kSubtitleTrackIdentifier = 42;
+
+static NSString *const kSubtitleTrackDefaultLanguage = @"en";
 
 @interface CastService () <ServiceCommandDelegate>
 
@@ -97,6 +102,8 @@
     capabilities = [capabilities arrayByAddingObjectsFromArray:kMediaPlayerCapabilities];
     capabilities = [capabilities arrayByAddingObjectsFromArray:kVolumeControlCapabilities];
     capabilities = [capabilities arrayByAddingObjectsFromArray:@[
+            kMediaPlayerSubtitleVTT,
+
             kMediaControlPlay,
             kMediaControlPause,
             kMediaControlStop,
@@ -153,8 +160,9 @@
     {
         NSDictionary *info = [[NSBundle mainBundle] infoDictionary];
         NSString *clientPackageName = [info objectForKey:@"CFBundleIdentifier"];
-        
-        _castDeviceManager = [[GCKDeviceManager alloc] initWithDevice:_castDevice clientPackageName:clientPackageName];
+
+        _castDeviceManager = [self createDeviceManagerWithDevice:_castDevice
+                                            andClientPackageName:clientPackageName];
         _castDeviceManager.delegate = self;
     }
     
@@ -201,7 +209,7 @@
 
     self.connected = YES;
 
-    _castMediaControlChannel = [[GCKMediaControlChannel alloc] init];
+    _castMediaControlChannel = [self createMediaControlChannel];
     [_castDeviceManager addChannel:_castMediaControlChannel];
 
     dispatch_on_main(^{ [self.delegate deviceServiceConnectionSuccess:self]; });
@@ -449,8 +457,22 @@
         GCKImage *iconImage = [[GCKImage alloc] initWithURL:iconURL width:100 height:100];
         [metaData addImage:iconImage];
     }
-    
-    GCKMediaInformation *mediaInformation = [[GCKMediaInformation alloc] initWithContentID:mediaInfo.url.absoluteString streamType:GCKMediaStreamTypeBuffered contentType:mediaInfo.mimeType metadata:metaData streamDuration:1000 customData:nil];
+
+    NSArray *mediaTracks;
+    if (mediaInfo.subtitleTrack) {
+        mediaTracks = @[
+            [self mediaTrackFromSubtitleTrack:mediaInfo.subtitleTrack]];
+    }
+
+    GCKMediaInformation *mediaInformation = [[GCKMediaInformation alloc]
+        initWithContentID:mediaInfo.url.absoluteString
+               streamType:GCKMediaStreamTypeBuffered
+              contentType:mediaInfo.mimeType
+                 metadata:metaData
+           streamDuration:1000
+              mediaTracks:mediaTracks
+           textTrackStyle:[GCKMediaTextTrackStyle createDefault]
+               customData:nil];
     
     [self playMedia:mediaInformation webAppId:self.castWebAppId success:success failure:failure];
 }
@@ -459,7 +481,15 @@
 {
     WebAppLaunchSuccessBlock webAppLaunchBlock = ^(WebAppSession *webAppSession)
     {
-        NSInteger result = [_castMediaControlChannel loadMedia:mediaInformation autoplay:YES];
+        NSArray *trackIDs;
+        if (mediaInformation.mediaTracks) {
+            trackIDs = @[@(kSubtitleTrackIdentifier)];
+        }
+
+        NSInteger result = [_castMediaControlChannel loadMedia:mediaInformation
+                                                      autoplay:YES
+                                                  playPosition:0.0
+                                                activeTrackIDs:trackIDs];
 
         if (result == kGCKInvalidRequestID)
         {
@@ -897,6 +927,31 @@
     [self.castDeviceManager requestDeviceStatus];
 
     return subscription;
+}
+
+#pragma mark - Private
+
+- (GCKDeviceManager *)createDeviceManagerWithDevice:(GCKDevice *)device
+                               andClientPackageName:(NSString *)clientPackageName {
+    return [[GCKDeviceManager alloc] initWithDevice:device
+                                  clientPackageName:clientPackageName];
+}
+
+- (GCKMediaControlChannel *)createMediaControlChannel {
+    return  [[GCKMediaControlChannel alloc] init];
+}
+
+- (GCKMediaTrack *)mediaTrackFromSubtitleTrack:(SubtitleTrack *)subtitleTrack {
+    return [[GCKMediaTrack alloc]
+        initWithIdentifier:kSubtitleTrackIdentifier
+         contentIdentifier:subtitleTrack.url.absoluteString
+               contentType:subtitleTrack.mimeType
+                      type:GCKMediaTrackTypeText
+               textSubtype:GCKMediaTextTrackSubtypeSubtitles
+                      name:subtitleTrack.label
+        // languageCode is required when the track is subtitles
+              languageCode:subtitleTrack.language ?: kSubtitleTrackDefaultLanguage
+                customData:nil];
 }
 
 @end
