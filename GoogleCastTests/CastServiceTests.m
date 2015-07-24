@@ -22,6 +22,9 @@
 
 #import "SubtitleTrack.h"
 
+#import "NSInvocation+ObjectGetter.h"
+#import "OCMStubRecorder+XCTestExpectation.h"
+
 @interface CastServiceTests : XCTestCase
 
 @property(nonatomic, strong) CastService *service;
@@ -159,10 +162,62 @@
         }];
 }
 
+- (void)testPlayVideoWithSubtitlesShouldLoadMediaWithActiveSubtitleTrackID {
+    [self checkPlayVideoWithMediaInfo:[self mediaInfoWithSubtitle]
+        shouldVerifyExpectationOnMediaControlChannelMock:
+            ^(GCKMediaControlChannel *controlChannelMock, XCTestExpectation *mediaLoadedExpectation) {
+                [[OCMExpect([controlChannelMock loadMedia:OCMOCK_ANY
+                                                 autoplay:YES
+                                             playPosition:0.0
+                                           activeTrackIDs:OCMOCK_ANY]) andDo:^(NSInvocation *invocation) {
+                    GCKMediaInformation *mediaInformation = [invocation objectArgumentAtIndex:0];
+                    NSArray *activeTrackIDs = [invocation objectArgumentAtIndex:3];
+
+                    GCKMediaTrack *mediaTrack = [mediaInformation.mediaTracks firstObject];
+                    NSInteger activeTrackID = [[activeTrackIDs firstObject]
+                        integerValue];
+                    XCTAssertEqual(activeTrackID, mediaTrack.identifier);
+                }] andFulfillExpectation:mediaLoadedExpectation];
+            }];
+}
+
+- (void)testPlayVideoWithoutSubtitlesShouldLoadMediaWithoutActiveSubtitleTrackID {
+    [self checkPlayVideoWithMediaInfo:[self mediaInfoWithoutSubtitle]
+        shouldVerifyExpectationOnMediaControlChannelMock:
+            ^(GCKMediaControlChannel *controlChannelMock, XCTestExpectation *mediaLoadedExpectation) {
+                [[OCMExpect([controlChannelMock loadMedia:OCMOCK_ANY
+                                                 autoplay:YES
+                                             playPosition:0.0
+                                           activeTrackIDs:OCMOCK_ANY]) andDo:^(NSInvocation *invocation) {
+                    NSArray *activeTrackIDs = [invocation objectArgumentAtIndex:3];
+                    XCTAssertNil(activeTrackIDs);
+                }] andFulfillExpectation:mediaLoadedExpectation];
+            }];
+}
+
 #pragma mark - Helpers
 
 - (void)checkPlayVideoWithMediaInfo:(MediaInfo *)mediaInfo
 shouldLoadMediaWithMediaInformationPassingTest:(void (^)(GCKMediaInformation *mediaInformation))checkBlock {
+    [self checkPlayVideoWithMediaInfo:mediaInfo
+        shouldVerifyExpectationOnMediaControlChannelMock:
+            ^(GCKMediaControlChannel *controlChannelMock, XCTestExpectation *mediaLoadedExpectation) {
+                OCMExpect([controlChannelMock loadMedia:
+                        [OCMArg checkWithBlock:^BOOL(GCKMediaInformation *mediaInformation) {
+                            checkBlock(mediaInformation);
+
+                            [mediaLoadedExpectation fulfill];
+                            return YES;
+                        }]
+                                               autoplay:YES
+                                           playPosition:0.0
+                                         activeTrackIDs:OCMOCK_ANY]);
+            }];
+}
+
+- (void)checkPlayVideoWithMediaInfo:(MediaInfo *)mediaInfo
+shouldVerifyExpectationOnMediaControlChannelMock:
+    (void (^)(GCKMediaControlChannel *controlChannelMock, XCTestExpectation *mediaLoadedExpectation))checkBlock {
     id /*GCKMediaControlChannel **/ controlChannelMock = OCMClassMock([GCKMediaControlChannel class]);
     OCMStub([self.service createMediaControlChannel]).andReturn(controlChannelMock);
 
@@ -173,15 +228,7 @@ shouldLoadMediaWithMediaInformationPassingTest:(void (^)(GCKMediaInformation *me
     [self.service deviceManagerDidConnect:deviceManagerStub];
 
     XCTestExpectation *mediaLoadedExpectation = [self expectationWithDescription:@"media did load"];
-
-    OCMExpect([controlChannelMock loadMedia:
-            [OCMArg checkWithBlock:^BOOL(GCKMediaInformation *mediaInformation) {
-                checkBlock(mediaInformation);
-
-                [mediaLoadedExpectation fulfill];
-                return YES;
-            }]
-                                   autoplay:YES]);
+    checkBlock(controlChannelMock, mediaLoadedExpectation);
 
     [[OCMStub([deviceManagerStub launchApplication:OCMOCK_ANY
                                  relaunchIfRunning:NO]).andReturn(42) ignoringNonObjectArgs]

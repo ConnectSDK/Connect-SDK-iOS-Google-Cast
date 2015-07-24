@@ -481,7 +481,15 @@ static NSString *const kSubtitleTrackDefaultLanguage = @"en";
 {
     WebAppLaunchSuccessBlock webAppLaunchBlock = ^(WebAppSession *webAppSession)
     {
-        NSInteger result = [_castMediaControlChannel loadMedia:mediaInformation autoplay:YES];
+        NSArray *trackIDs;
+        if (mediaInformation.mediaTracks) {
+            trackIDs = @[@(kSubtitleTrackIdentifier)];
+        }
+
+        NSInteger result = [_castMediaControlChannel loadMedia:mediaInformation
+                                                      autoplay:YES
+                                                  playPosition:0.0
+                                                activeTrackIDs:trackIDs];
 
         if (result == kGCKInvalidRequestID)
         {
