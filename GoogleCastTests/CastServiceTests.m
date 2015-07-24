@@ -37,11 +37,111 @@
         }];
 }
 
-- (void)_testPlayVideoWithSubtitlesShouldLoadMediaWithOneMediaTrack {
+- (void)testPlayVideoWithSubtitlesShouldLoadMediaWithOneMediaTrack {
     [self checkPlayVideoWithMediaInfo:[self mediaInfoWithSubtitle]
-shouldLoadMediaWithMediaInformationPassingTest:^(GCKMediaInformation *mediaInformation) {
-    XCTAssertEqual(mediaInformation.mediaTracks.count, 1);
-}];
+        shouldLoadMediaWithMediaInformationPassingTest:^(GCKMediaInformation *mediaInformation) {
+            XCTAssertEqual(mediaInformation.mediaTracks.count, 1);
+        }];
+}
+
+- (void)testPlayVideoWithSubtitlesShouldSetMediaTrackContentIdentifierAsURL {
+    MediaInfo *mediaInfo = [self mediaInfoWithSubtitle];
+    [self checkPlayVideoWithMediaInfo:mediaInfo
+        shouldLoadMediaWithMediaInformationPassingTest:^(GCKMediaInformation *mediaInformation) {
+            GCKMediaTrack *track = [mediaInformation.mediaTracks firstObject];
+            XCTAssertEqualObjects(track.contentIdentifier,
+                                  mediaInfo.subtitleTrack.url.absoluteString);
+        }];
+}
+
+- (void)testPlayVideoWithSubtitlesShouldSetMediaTrackContentTypeAsMIMEType {
+    MediaInfo *mediaInfo = [self mediaInfoWithSubtitle];
+    [self checkPlayVideoWithMediaInfo:mediaInfo
+        shouldLoadMediaWithMediaInformationPassingTest:^(GCKMediaInformation *mediaInformation) {
+            GCKMediaTrack *track = [mediaInformation.mediaTracks firstObject];
+            XCTAssertEqualObjects(track.contentType, mediaInfo.subtitleTrack.mimeType);
+        }];
+}
+
+- (void)testPlayVideoWithSubtitlesShouldSetMediaTrackTypeAsText {
+    MediaInfo *mediaInfo = [self mediaInfoWithSubtitle];
+    [self checkPlayVideoWithMediaInfo:mediaInfo
+        shouldLoadMediaWithMediaInformationPassingTest:^(GCKMediaInformation *mediaInformation) {
+            GCKMediaTrack *track = [mediaInformation.mediaTracks firstObject];
+            XCTAssertEqual(track.type, GCKMediaTrackTypeText);
+        }];
+}
+
+- (void)testPlayVideoWithSubtitlesShouldSetMediaTrackSubtypeAsSubtitles {
+    MediaInfo *mediaInfo = [self mediaInfoWithSubtitle];
+    [self checkPlayVideoWithMediaInfo:mediaInfo
+        shouldLoadMediaWithMediaInformationPassingTest:^(GCKMediaInformation *mediaInformation) {
+            GCKMediaTrack *track = [mediaInformation.mediaTracks firstObject];
+            XCTAssertEqual(track.textSubtype, GCKMediaTextTrackSubtypeSubtitles);
+        }];
+}
+
+- (void)testPlayVideoWithSubtitlesShouldSetMediaTrackNameAsLabel {
+    MediaInfo *mediaInfo = [self mediaInfoWithSubtitle];
+    [self checkPlayVideoWithMediaInfo:mediaInfo
+        shouldLoadMediaWithMediaInformationPassingTest:^(GCKMediaInformation *mediaInformation) {
+            GCKMediaTrack *track = [mediaInformation.mediaTracks firstObject];
+            XCTAssertEqualObjects(track.name, mediaInfo.subtitleTrack.label);
+        }];
+}
+
+- (void)testPlayVideoWithSubtitlesShouldSetMediaTrackLanguageCodeAsLanguage {
+    MediaInfo *mediaInfo = [self mediaInfoWithSubtitle];
+    [self checkPlayVideoWithMediaInfo:mediaInfo
+        shouldLoadMediaWithMediaInformationPassingTest:^(GCKMediaInformation *mediaInformation) {
+            GCKMediaTrack *track = [mediaInformation.mediaTracks firstObject];
+            XCTAssertEqualObjects(track.languageCode, mediaInfo.subtitleTrack.language);
+        }];
+}
+
+- (void)testPlayVideoWithSubtitlesWithoutMIMETypeShouldNotSetMediaTrackContentType {
+    MediaInfo *mediaInfo = [self mediaInfoWithSubtitleMIMEType:nil
+                                                      language:@"en"
+                                                      andLabel:@"a"];
+    [self checkPlayVideoWithMediaInfo:mediaInfo
+        shouldLoadMediaWithMediaInformationPassingTest:^(GCKMediaInformation *mediaInformation) {
+            GCKMediaTrack *track = [mediaInformation.mediaTracks firstObject];
+            XCTAssertNil(track.contentType);
+        }];
+}
+
+- (void)testPlayVideoWithSubtitlesWithoutLabelShouldNotSetMediaTrackName {
+    MediaInfo *mediaInfo = [self mediaInfoWithSubtitleMIMEType:@"text/vtt"
+                                                      language:@"en"
+                                                      andLabel:nil];
+    [self checkPlayVideoWithMediaInfo:mediaInfo
+        shouldLoadMediaWithMediaInformationPassingTest:^(GCKMediaInformation *mediaInformation) {
+            GCKMediaTrack *track = [mediaInformation.mediaTracks firstObject];
+            XCTAssertNil(track.name);
+        }];
+}
+
+- (void)testPlayVideoWithSubtitlesWithoutLanguageShouldSetMediaTrackLanguageCodeAsDefault {
+    MediaInfo *mediaInfo = [self mediaInfoWithSubtitleMIMEType:@"text/vtt"
+                                                      language:nil
+                                                      andLabel:@"a"];
+    [self checkPlayVideoWithMediaInfo:mediaInfo
+        shouldLoadMediaWithMediaInformationPassingTest:^(GCKMediaInformation *mediaInformation) {
+            GCKMediaTrack *track = [mediaInformation.mediaTracks firstObject];
+            XCTAssertEqualObjects(track.languageCode, @"en");
+        }];
+}
+
+- (void)testPlayVideoWithSubtitlesWithIncorrectLanguageShouldSetMediaTrackLanguageCodeAsLanguage {
+    MediaInfo *mediaInfo = [self mediaInfoWithSubtitleMIMEType:@"text/vtt"
+                                                      language:@"unknown_!#%$"
+                                                      andLabel:@"a"];
+    [self checkPlayVideoWithMediaInfo:mediaInfo
+        shouldLoadMediaWithMediaInformationPassingTest:^(GCKMediaInformation *mediaInformation) {
+            GCKMediaTrack *track = [mediaInformation.mediaTracks firstObject];
+            XCTAssertEqualObjects(track.languageCode,
+                                  mediaInfo.subtitleTrack.language);
+        }];
 }
 
 #pragma mark - Helpers
@@ -94,12 +194,21 @@ shouldLoadMediaWithMediaInformationPassingTest:(void (^)(GCKMediaInformation *me
 #pragma mark - Subtitle Helpers
 
 - (MediaInfo *)mediaInfoWithSubtitle {
+    return [self mediaInfoWithSubtitleMIMEType:@"text/vtt"
+                                      language:@"en"
+                                      andLabel:@"Test"];
+}
+
+- (MediaInfo *)mediaInfoWithSubtitleMIMEType:(NSString *)mimeType
+                                    language:(NSString *)language
+                                    andLabel:(NSString *)label {
     NSURL *subtitleURL = [NSURL URLWithString:@"http://example.com/"];
     MediaInfo *mediaInfo = [self mediaInfoWithoutSubtitle];
     SubtitleTrack *track = [SubtitleTrack trackWithURL:subtitleURL
                                               andBlock:^(SubtitleTrackBuilder *builder) {
-                                                  builder.language = @"en";
-                                                  builder.label = @"Test";
+                                                  builder.mimeType = mimeType;
+                                                  builder.language = language;
+                                                  builder.label = label;
                                               }];
     mediaInfo.subtitleTrack = track;
 

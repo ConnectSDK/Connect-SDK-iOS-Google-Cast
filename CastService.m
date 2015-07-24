@@ -22,9 +22,14 @@
 
 #import "ConnectError.h"
 #import "CastWebAppSession.h"
+#import "SubtitleTrack.h"
 
 #define kCastServiceMuteSubscriptionName @"mute"
 #define kCastServiceVolumeSubscriptionName @"volume"
+
+static const NSInteger kSubtitleTrackIdentifier = 42;
+
+static NSString *const kSubtitleTrackDefaultLanguage = @"en";
 
 @interface CastService () <ServiceCommandDelegate>
 
@@ -450,8 +455,22 @@
         GCKImage *iconImage = [[GCKImage alloc] initWithURL:iconURL width:100 height:100];
         [metaData addImage:iconImage];
     }
-    
-    GCKMediaInformation *mediaInformation = [[GCKMediaInformation alloc] initWithContentID:mediaInfo.url.absoluteString streamType:GCKMediaStreamTypeBuffered contentType:mediaInfo.mimeType metadata:metaData streamDuration:1000 customData:nil];
+
+    NSArray *mediaTracks;
+    if (mediaInfo.subtitleTrack) {
+        mediaTracks = @[
+            [self mediaTrackFromSubtitleTrack:mediaInfo.subtitleTrack]];
+    }
+
+    GCKMediaInformation *mediaInformation = [[GCKMediaInformation alloc]
+        initWithContentID:mediaInfo.url.absoluteString
+               streamType:GCKMediaStreamTypeBuffered
+              contentType:mediaInfo.mimeType
+                 metadata:metaData
+           streamDuration:1000
+              mediaTracks:mediaTracks
+           textTrackStyle:[GCKMediaTextTrackStyle createDefault]
+               customData:nil];
     
     [self playMedia:mediaInformation webAppId:self.castWebAppId success:success failure:failure];
 }
@@ -910,6 +929,19 @@
 
 - (GCKMediaControlChannel *)createMediaControlChannel {
     return  [[GCKMediaControlChannel alloc] init];
+}
+
+- (GCKMediaTrack *)mediaTrackFromSubtitleTrack:(SubtitleTrack *)subtitleTrack {
+    return [[GCKMediaTrack alloc]
+        initWithIdentifier:kSubtitleTrackIdentifier
+         contentIdentifier:subtitleTrack.url.absoluteString
+               contentType:subtitleTrack.mimeType
+                      type:GCKMediaTrackTypeText
+               textSubtype:GCKMediaTextTrackSubtypeSubtitles
+                      name:subtitleTrack.label
+        // languageCode is required when the track is subtitles
+              languageCode:subtitleTrack.language ?: kSubtitleTrackDefaultLanguage
+                customData:nil];
 }
 
 @end
