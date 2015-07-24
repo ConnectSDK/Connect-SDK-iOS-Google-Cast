@@ -24,9 +24,24 @@
 
 @interface CastServiceTests : XCTestCase
 
+@property(nonatomic, strong) CastService *service;
 @end
 
 @implementation CastServiceTests
+
+- (void)setUp {
+    [super setUp];
+
+    // using partial mock here to inject a few Cast fakes
+    self.service = OCMPartialMock([CastService new]);
+}
+
+#pragma mark - General Tests
+
+- (void)testInstanceShouldHaveVTTCapability {
+    XCTAssertNotEqual([self.service.capabilities indexOfObject:kMediaPlayerSubtitleVTT],
+                      NSNotFound);
+}
 
 #pragma mark - Subtitle Tests
 
@@ -148,17 +163,14 @@
 
 - (void)checkPlayVideoWithMediaInfo:(MediaInfo *)mediaInfo
 shouldLoadMediaWithMediaInformationPassingTest:(void (^)(GCKMediaInformation *mediaInformation))checkBlock {
-    // using partial mock here to inject a few Cast fakes
-    CastService *service = OCMPartialMock([CastService new]);
-
     id /*GCKMediaControlChannel **/ controlChannelMock = OCMClassMock([GCKMediaControlChannel class]);
-    OCMStub([service createMediaControlChannel]).andReturn(controlChannelMock);
+    OCMStub([self.service createMediaControlChannel]).andReturn(controlChannelMock);
 
     id /*GCKDeviceManager **/ deviceManagerStub = OCMClassMock([GCKDeviceManager class]);
-    OCMStub([service createDeviceManagerWithDevice:OCMOCK_ANY
-                              andClientPackageName:OCMOCK_ANY]).andReturn(deviceManagerStub);
-    [service connect];
-    [service deviceManagerDidConnect:deviceManagerStub];
+    OCMStub([self.service createDeviceManagerWithDevice:OCMOCK_ANY
+                                   andClientPackageName:OCMOCK_ANY]).andReturn(deviceManagerStub);
+    [self.service connect];
+    [self.service deviceManagerDidConnect:deviceManagerStub];
 
     XCTestExpectation *mediaLoadedExpectation = [self expectationWithDescription:@"media did load"];
 
@@ -175,17 +187,17 @@ shouldLoadMediaWithMediaInformationPassingTest:(void (^)(GCKMediaInformation *me
                                  relaunchIfRunning:NO]).andReturn(42) ignoringNonObjectArgs]
         andDo:^(NSInvocation *invocation) {
             id /*GCKApplicationMetadata **/ metadataStub = OCMClassMock([GCKApplicationMetadata class]);
-            OCMStub([metadataStub applicationID]).andReturn(service.castWebAppId);
-            [service deviceManager:deviceManagerStub
-       didConnectToCastApplication:metadataStub
-                         sessionID:@"s"
-               launchedApplication:YES];
+            OCMStub([metadataStub applicationID]).andReturn(self.service.castWebAppId);
+            [self.service deviceManager:deviceManagerStub
+            didConnectToCastApplication:metadataStub
+                              sessionID:@"s"
+                    launchedApplication:YES];
         }];
 
-    [service playMediaWithMediaInfo:mediaInfo
-                         shouldLoop:NO
-                            success:nil
-                            failure:nil];
+    [self.service playMediaWithMediaInfo:mediaInfo
+                              shouldLoop:NO
+                                 success:nil
+                                 failure:nil];
 
     [self waitForExpectationsWithTimeout:kDefaultAsyncTestTimeout handler:nil];
     OCMVerifyAll(controlChannelMock);
