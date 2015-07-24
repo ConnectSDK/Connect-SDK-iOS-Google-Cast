@@ -18,8 +18,8 @@
 //  limitations under the License.
 //
 
-#import <GoogleCast/GoogleCast.h>
-#import "CastService.h"
+#import "CastService_Private.h"
+
 #import "ConnectError.h"
 #import "CastWebAppSession.h"
 
@@ -153,8 +153,9 @@
     {
         NSDictionary *info = [[NSBundle mainBundle] infoDictionary];
         NSString *clientPackageName = [info objectForKey:@"CFBundleIdentifier"];
-        
-        _castDeviceManager = [[GCKDeviceManager alloc] initWithDevice:_castDevice clientPackageName:clientPackageName];
+
+        _castDeviceManager = [self createDeviceManagerWithDevice:_castDevice
+                                            andClientPackageName:clientPackageName];
         _castDeviceManager.delegate = self;
     }
     
@@ -201,7 +202,7 @@
 
     self.connected = YES;
 
-    _castMediaControlChannel = [[GCKMediaControlChannel alloc] init];
+    _castMediaControlChannel = [self createMediaControlChannel];
     [_castDeviceManager addChannel:_castMediaControlChannel];
 
     dispatch_on_main(^{ [self.delegate deviceServiceConnectionSuccess:self]; });
@@ -897,6 +898,18 @@
     [self.castDeviceManager requestDeviceStatus];
 
     return subscription;
+}
+
+#pragma mark - Private
+
+- (GCKDeviceManager *)createDeviceManagerWithDevice:(GCKDevice *)device
+                               andClientPackageName:(NSString *)clientPackageName {
+    return [[GCKDeviceManager alloc] initWithDevice:device
+                                  clientPackageName:clientPackageName];
+}
+
+- (GCKMediaControlChannel *)createMediaControlChannel {
+    return  [[GCKMediaControlChannel alloc] init];
 }
 
 @end
