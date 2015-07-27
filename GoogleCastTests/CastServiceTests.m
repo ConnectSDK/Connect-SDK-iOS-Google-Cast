@@ -20,7 +20,7 @@
 
 #import "CastService_Private.h"
 
-#import "SubtitleTrack.h"
+#import "SubtitleInfo.h"
 
 #import "NSInvocation+ObjectGetter.h"
 #import "OCMStubRecorder+XCTestExpectation.h"
@@ -68,7 +68,7 @@
         shouldLoadMediaWithMediaInformationPassingTest:^(GCKMediaInformation *mediaInformation) {
             GCKMediaTrack *track = [mediaInformation.mediaTracks firstObject];
             XCTAssertEqualObjects(track.contentIdentifier,
-                                  mediaInfo.subtitleTrack.url.absoluteString);
+                                  mediaInfo.subtitleInfo.url.absoluteString);
         }];
 }
 
@@ -77,7 +77,7 @@
     [self checkPlayVideoWithMediaInfo:mediaInfo
         shouldLoadMediaWithMediaInformationPassingTest:^(GCKMediaInformation *mediaInformation) {
             GCKMediaTrack *track = [mediaInformation.mediaTracks firstObject];
-            XCTAssertEqualObjects(track.contentType, mediaInfo.subtitleTrack.mimeType);
+            XCTAssertEqualObjects(track.contentType, mediaInfo.subtitleInfo.mimeType);
         }];
 }
 
@@ -104,7 +104,7 @@
     [self checkPlayVideoWithMediaInfo:mediaInfo
         shouldLoadMediaWithMediaInformationPassingTest:^(GCKMediaInformation *mediaInformation) {
             GCKMediaTrack *track = [mediaInformation.mediaTracks firstObject];
-            XCTAssertEqualObjects(track.name, mediaInfo.subtitleTrack.label);
+            XCTAssertEqualObjects(track.name, mediaInfo.subtitleInfo.label);
         }];
 }
 
@@ -113,7 +113,7 @@
     [self checkPlayVideoWithMediaInfo:mediaInfo
         shouldLoadMediaWithMediaInformationPassingTest:^(GCKMediaInformation *mediaInformation) {
             GCKMediaTrack *track = [mediaInformation.mediaTracks firstObject];
-            XCTAssertEqualObjects(track.languageCode, mediaInfo.subtitleTrack.language);
+            XCTAssertEqualObjects(track.languageCode, mediaInfo.subtitleInfo.language);
         }];
 }
 
@@ -158,7 +158,7 @@
         shouldLoadMediaWithMediaInformationPassingTest:^(GCKMediaInformation *mediaInformation) {
             GCKMediaTrack *track = [mediaInformation.mediaTracks firstObject];
             XCTAssertEqualObjects(track.languageCode,
-                                  mediaInfo.subtitleTrack.language);
+                                  mediaInfo.subtitleInfo.language);
         }];
 }
 
@@ -263,13 +263,13 @@ shouldVerifyExpectationOnMediaControlChannelMock:
                                     andLabel:(NSString *)label {
     NSURL *subtitleURL = [NSURL URLWithString:@"http://example.com/"];
     MediaInfo *mediaInfo = [self mediaInfoWithoutSubtitle];
-    SubtitleTrack *track = [SubtitleTrack trackWithURL:subtitleURL
-                                              andBlock:^(SubtitleTrackBuilder *builder) {
-                                                  builder.mimeType = mimeType;
-                                                  builder.language = language;
-                                                  builder.label = label;
-                                              }];
-    mediaInfo.subtitleTrack = track;
+    SubtitleInfo *track = [SubtitleInfo infoWithURL:subtitleURL
+                                           andBlock:^(SubtitleInfoBuilder *builder) {
+                                               builder.mimeType = mimeType;
+                                               builder.language = language;
+                                               builder.label = label;
+                                           }];
+    mediaInfo.subtitleInfo = track;
 
     return mediaInfo;
 }
