@@ -102,7 +102,7 @@ static NSString *const kSubtitleTrackDefaultLanguage = @"en";
     capabilities = [capabilities arrayByAddingObjectsFromArray:kMediaPlayerCapabilities];
     capabilities = [capabilities arrayByAddingObjectsFromArray:kVolumeControlCapabilities];
     capabilities = [capabilities arrayByAddingObjectsFromArray:@[
-            kMediaPlayerSubtitleVTT,
+            kMediaPlayerSubtitleWebVTT,
 
             kMediaControlPlay,
             kMediaControlPause,

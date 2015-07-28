@@ -42,7 +42,7 @@
 #pragma mark - General Tests
 
 - (void)testInstanceShouldHaveVTTCapability {
-    XCTAssertNotEqual([self.service.capabilities indexOfObject:kMediaPlayerSubtitleVTT],
+    XCTAssertNotEqual([self.service.capabilities indexOfObject:kMediaPlayerSubtitleWebVTT],
                       NSNotFound);
 }
 
