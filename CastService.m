@@ -129,12 +129,6 @@ static NSString *const kSubtitleTrackDefaultLanguage = @"en";
     [self setCapabilities:capabilities];
 }
 
-- (void) sendNotSupportedFailure:(FailureBlock)failure
-{
-    if (failure)
-        failure([ConnectError generateErrorWithCode:ConnectStatusCodeNotSupported andDetails:nil]);
-}
-
 -(NSString *)castWebAppId
 {
     if(_castWebAppId == nil){
@@ -628,14 +622,12 @@ static NSString *const kSubtitleTrackDefaultLanguage = @"en";
 
 - (void)rewindWithSuccess:(SuccessBlock)success failure:(FailureBlock)failure
 {
-    if (failure)
-        failure([ConnectError generateErrorWithCode:ConnectStatusCodeNotSupported andDetails:nil]);
+    [self sendNotSupportedFailure:failure];
 }
 
 - (void)fastForwardWithSuccess:(SuccessBlock)success failure:(FailureBlock)failure
 {
-    if (failure)
-        failure([ConnectError generateErrorWithCode:ConnectStatusCodeNotSupported andDetails:nil]);
+    [self sendNotSupportedFailure:failure];
 }
 
 
@@ -684,14 +676,12 @@ static NSString *const kSubtitleTrackDefaultLanguage = @"en";
 
 - (void)launchWebApp:(NSString *)webAppId params:(NSDictionary *)params success:(WebAppLaunchSuccessBlock)success failure:(FailureBlock)failure
 {
-    if (failure)
-        failure([ConnectError generateErrorWithCode:ConnectStatusCodeNotSupported andDetails:nil]);
+    [self sendNotSupportedFailure:failure];
 }
 
 - (void)launchWebApp:(NSString *)webAppId params:(NSDictionary *)params relaunchIfRunning:(BOOL)relaunchIfRunning success:(WebAppLaunchSuccessBlock)success failure:(FailureBlock)failure
 {
-    if (failure)
-        failure([ConnectError generateErrorWithCode:ConnectStatusCodeNotSupported andDetails:nil]);
+    [self sendNotSupportedFailure:failure];
 }
 
 - (void)joinWebApp:(LaunchSession *)webAppLaunchSession success:(WebAppLaunchSuccessBlock)success failure:(FailureBlock)failure
@@ -952,6 +942,15 @@ static NSString *const kSubtitleTrackDefaultLanguage = @"en";
         // languageCode is required when the track is subtitles
               languageCode:subtitleInfo.language ?: kSubtitleTrackDefaultLanguage
                 customData:nil];
+}
+
+- (nullable ServiceSubscription *)sendNotSupportedFailure:(nullable FailureBlock)failure {
+    if (failure) {
+        failure([ConnectError generateErrorWithCode:ConnectStatusCodeNotSupported
+                                         andDetails:nil]);
+    }
+
+    return nil;
 }
 
 @end
