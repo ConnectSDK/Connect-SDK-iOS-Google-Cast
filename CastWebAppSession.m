@@ -23,12 +23,6 @@
 
 
 @interface CastWebAppSession () <GCKMediaControlChannelDelegate>
-{
-    MediaPlayStateSuccessBlock _immediatePlayStateCallback;
-
-    ServiceSubscription *_playStateSubscription;
-    ServiceSubscription *_mediaInfoSubscription;
-}
 
 @end
 
@@ -73,21 +67,6 @@
     _castServiceChannel = nil;
 
     [self.service.castDeviceManager leaveApplication];
-}
-
-#pragma mark - ServiceCommandDelegate
-
-- (int)sendSubscription:(ServiceSubscription *)subscription type:(ServiceSubscriptionType)type payload:(id)payload toURL:(NSURL *)URL withId:(int)callId
-{
-    if (type == ServiceSubscriptionTypeUnsubscribe)
-    {
-        if (subscription == _playStateSubscription)
-            _playStateSubscription = nil;
-        else if (subscription == _mediaInfoSubscription)
-            _mediaInfoSubscription = nil;
-    }
-
-    return -1;
 }
 
 #pragma mark - App to app
@@ -147,68 +126,6 @@
         NSString *messageJSON = [[NSString alloc] initWithData:messageData encoding:NSUTF8StringEncoding];
 
         [self sendText:messageJSON success:success failure:failure];
-    }
-}
-
-#pragma mark - GCKMediaControlChannelDelegate methods
-
-- (void)mediaControlChannelDidUpdateStatus:(GCKMediaControlChannel *)mediaControlChannel
-{
-    MediaControlPlayState playState;
-
-    switch (mediaControlChannel.mediaStatus.playerState)
-    {
-        case GCKMediaPlayerStateIdle:
-            if (mediaControlChannel.mediaStatus.idleReason == GCKMediaPlayerIdleReasonFinished)
-                playState = MediaControlPlayStateFinished;
-            else
-                playState = MediaControlPlayStateIdle;
-            break;
-
-        case GCKMediaPlayerStatePlaying:
-            playState = MediaControlPlayStatePlaying;
-            break;
-
-        case GCKMediaPlayerStatePaused:
-            playState = MediaControlPlayStatePaused;
-            break;
-
-        case GCKMediaPlayerStateBuffering:
-            playState = MediaControlPlayStateBuffering;
-            break;
-
-        case GCKMediaPlayerStateUnknown:
-        default:
-            playState = MediaControlPlayStateUnknown;
-    }
-
-    if (_immediatePlayStateCallback)
-    {
-        _immediatePlayStateCallback(playState);
-        _immediatePlayStateCallback = nil;
-    }
-
-    if (_playStateSubscription)
-    {
-        [_playStateSubscription.successCalls enumerateObjectsUsingBlock:^(id success, NSUInteger idx, BOOL *stop)
-        {
-            MediaPlayStateSuccessBlock mediaPlayStateSuccess = (MediaPlayStateSuccessBlock) success;
-
-            if (mediaPlayStateSuccess)
-                mediaPlayStateSuccess(playState);
-        }];
-    }
-    
-    if (_mediaInfoSubscription)
-    {
-        [_mediaInfoSubscription.successCalls enumerateObjectsUsingBlock:^(id success, NSUInteger idx, BOOL *stop)
-         {
-             SuccessBlock mediaInfoSuccess = (SuccessBlock) success;
-             
-             if (mediaInfoSuccess){
-                 mediaInfoSuccess([self getMetadataInfo]);
-             }
-         }];
     }
 }
 
@@ -312,87 +229,27 @@
 
 - (void)getDurationWithSuccess:(MediaDurationSuccessBlock)success failure:(FailureBlock)failure
 {
-    if (self.service.castMediaControlChannel.mediaStatus)
-    {
-        if (success)
-            success(self.service.castMediaControlChannel.mediaStatus.mediaInformation.streamDuration);
-    } else
-    {
-        if (failure)
-            failure([ConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"There is no media currently available"]);
-    }
+    [self.service getDurationWithSuccess:success failure:failure];
 }
 
 - (void)seek:(NSTimeInterval)position success:(SuccessBlock)success failure:(FailureBlock)failure
 {
-    if (!self.service.castMediaControlChannel.mediaStatus)
-    {
-        if (failure)
-            failure([ConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"There is no media currently available"]);
-
-        return;
-    }
-
-    NSInteger result = [self.service.castMediaControlChannel seekToTimeInterval:position];
-
-    if (result == kGCKInvalidRequestID)
-    {
-        if (failure)
-            failure([ConnectError generateErrorWithCode:ConnectStatusCodeTvError andDetails:nil]);
-    } else
-    {
-        if (success)
-            success(nil);
-    }
+    [self.service seek:position success:success failure:failure];
 }
 
 - (void)getPlayStateWithSuccess:(MediaPlayStateSuccessBlock)success failure:(FailureBlock)failure
 {
-    if (!self.service.castMediaControlChannel.mediaStatus)
-    {
-        if (failure)
-            failure([ConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"There is no media currently available"]);
-
-        return;
-    }
-
-    _immediatePlayStateCallback = success;
-
-    NSInteger result = [self.service.castMediaControlChannel requestStatus];
-
-    if (result == kGCKInvalidRequestID)
-    {
-        _immediatePlayStateCallback = nil;
-
-        if (failure)
-            failure([ConnectError generateErrorWithCode:ConnectStatusCodeTvError andDetails:nil]);
-    }
+    [self.service getPlayStateWithSuccess:success failure:failure];
 }
 
 - (ServiceSubscription *)subscribePlayStateWithSuccess:(MediaPlayStateSuccessBlock)success failure:(FailureBlock)failure
 {
-    if (!_playStateSubscription)
-        _playStateSubscription = [ServiceSubscription subscriptionWithDelegate:self target:nil payload:nil callId:-1];
-
-    [_playStateSubscription addSuccess:success];
-    [_playStateSubscription addFailure:failure];
-
-    [self.service.castMediaControlChannel requestStatus];
-
-    return _playStateSubscription;
+    return [self.service subscribePlayStateWithSuccess:success failure:failure];
 }
 
 - (void)getPositionWithSuccess:(MediaPositionSuccessBlock)success failure:(FailureBlock)failure
 {
-    if (self.service.castMediaControlChannel.mediaStatus)
-    {
-        if (success)
-            success(self.service.castMediaControlChannel.approximateStreamPosition);
-    } else
-    {
-        if (failure)
-            failure([ConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"There is no media currently available"]);
-    }
+    [self.service getPositionWithSuccess:success failure:failure];
 }
 
 - (void)closeWithSuccess:(SuccessBlock)success failure:(FailureBlock)failure
@@ -404,58 +261,11 @@
 }
 
 -(void)getMediaMetaDataWithSuccess:(SuccessBlock)success failure:(FailureBlock)failure{
-    if (self.service.castMediaControlChannel.mediaStatus)
-    {
-        if (success){
-        
-            success([self getMetadataInfo]);
-        }
-    } else
-    {
-        if (failure)
-            failure([ConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"There is no media currently available"]);
-    }
+    [self.service getMediaMetaDataWithSuccess:success failure:failure];
 }
 
 - (ServiceSubscription *)subscribeMediaInfoWithSuccess:(SuccessBlock)success failure:(FailureBlock)failure{
-    if (!_mediaInfoSubscription)
-        _mediaInfoSubscription = [ServiceSubscription subscriptionWithDelegate:self target:nil payload:nil callId:-1];
-    
-    [_mediaInfoSubscription addSuccess:success];
-    [_mediaInfoSubscription addFailure:failure];
-    
-    [self.service.castMediaControlChannel requestStatus];
-    
-    return _mediaInfoSubscription;
-}
-
--(NSDictionary *)getMetadataInfo{
-    
-    NSMutableDictionary *mediaMetaData = [NSMutableDictionary dictionary];
-    GCKMediaMetadata *metaData = self.service.castMediaControlChannel.mediaStatus.mediaInformation.metadata;
-    
-    if([metaData objectForKey:@"com.google.cast.metadata.TITLE"])
-        [mediaMetaData setObject:[metaData objectForKey:@"com.google.cast.metadata.TITLE"] forKey:@"title"];
-    
-    if([metaData objectForKey:@"com.google.cast.metadata.SUBTITLE"])
-        [mediaMetaData setObject:[metaData objectForKey:@"com.google.cast.metadata.SUBTITLE"] forKey:@"subtitle"];
-    
-    if([metaData objectForKey:@"images"]){
-        NSArray *images = [metaData objectForKey:@"images"];
-        if([images count] > 0){
-            [mediaMetaData setObject: [[images firstObject] objectForKey:@"url"] forKey:@"iconURL"];
-        }
-    }else
-    if(metaData.images){
-        NSArray *images = metaData.images;
-        if([images count] > 0){
-            GCKImage *image = [images firstObject];
-            [mediaMetaData setObject:image.URL.absoluteString forKey:@"iconURL"];
-        }
-        
-    }
-    
-    return mediaMetaData;
+    return [self.service subscribeMediaInfoWithSuccess:success failure:failure];
 }
 
 @end
