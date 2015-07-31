@@ -24,6 +24,7 @@
 #import "CastWebAppSession.h"
 #import "SubtitleInfo.h"
 
+#import "NSObject+FeatureNotSupported_Private.h"
 #import "NSMutableDictionary+NilSafe.h"
 
 #define kCastServiceMuteSubscriptionName @"mute"
@@ -1156,15 +1157,6 @@ static NSString *const kSubtitleTrackDefaultLanguage = @"en";
     }
 
     return mediaMetaData;
-}
-
-- (nullable ServiceSubscription *)sendNotSupportedFailure:(nullable FailureBlock)failure {
-    if (failure) {
-        failure([ConnectError generateErrorWithCode:ConnectStatusCodeNotSupported
-                                         andDetails:nil]);
-    }
-
-    return nil;
 }
 
 @end
