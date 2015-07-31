@@ -24,6 +24,8 @@
 #import "CastWebAppSession.h"
 #import "SubtitleInfo.h"
 
+#import "NSMutableDictionary+NilSafe.h"
+
 #define kCastServiceMuteSubscriptionName @"mute"
 #define kCastServiceVolumeSubscriptionName @"volume"
 
@@ -732,7 +734,10 @@ static NSString *const kSubtitleTrackDefaultLanguage = @"en";
     if (self.castMediaControlChannel.mediaStatus)
     {
         if (success) {
-            success([self getMetadataInfo]);
+            success([self metadataInfoFromMediaMetadata:self.castMediaControlChannel
+                .mediaStatus
+                .mediaInformation
+                .metadata]);
         }
     } else
     {
@@ -1098,7 +1103,10 @@ static NSString *const kSubtitleTrackDefaultLanguage = @"en";
             SuccessBlock mediaInfoSuccess = (SuccessBlock) success;
 
             if (mediaInfoSuccess){
-                mediaInfoSuccess([self getMetadataInfo]);
+                mediaInfoSuccess([self metadataInfoFromMediaMetadata:self.castMediaControlChannel
+                    .mediaStatus
+                    .mediaInformation
+                    .metadata]);
             }
         }];
     }
@@ -1129,29 +1137,22 @@ static NSString *const kSubtitleTrackDefaultLanguage = @"en";
                 customData:nil];
 }
 
-- (NSDictionary *)getMetadataInfo {
+- (NSDictionary *)metadataInfoFromMediaMetadata:(GCKMediaMetadata *)metaData {
     NSMutableDictionary *mediaMetaData = [NSMutableDictionary dictionary];
-    GCKMediaMetadata *metaData = self.castMediaControlChannel.mediaStatus.mediaInformation.metadata;
 
-    if([metaData objectForKey:@"com.google.cast.metadata.TITLE"])
-        [mediaMetaData setObject:[metaData objectForKey:@"com.google.cast.metadata.TITLE"] forKey:@"title"];
+    [mediaMetaData setNullableObject:[metaData objectForKey:kGCKMetadataKeyTitle]
+                              forKey:@"title"];
+    [mediaMetaData setNullableObject:[metaData objectForKey:kGCKMetadataKeySubtitle]
+                              forKey:@"subtitle"];
 
-    if([metaData objectForKey:@"com.google.cast.metadata.SUBTITLE"])
-        [mediaMetaData setObject:[metaData objectForKey:@"com.google.cast.metadata.SUBTITLE"] forKey:@"subtitle"];
-
-    if([metaData objectForKey:@"images"]){
-        NSArray *images = [metaData objectForKey:@"images"];
-        if([images count] > 0){
-            [mediaMetaData setObject: [[images firstObject] objectForKey:@"url"] forKey:@"iconURL"];
-        }
-    }else
-    if(metaData.images){
-        NSArray *images = metaData.images;
-        if([images count] > 0){
-            GCKImage *image = [images firstObject];
-            [mediaMetaData setObject:image.URL.absoluteString forKey:@"iconURL"];
-        }
-
+    NSString *const kMetadataKeyIconURL = @"iconURL";
+    GCKImage *image = [metaData.images firstObject];
+    [mediaMetaData setNullableObject:image.URL.absoluteString
+                              forKey:kMetadataKeyIconURL];
+    if (!mediaMetaData[kMetadataKeyIconURL]) {
+        NSDictionary *imageDict = [[metaData objectForKey:@"images"] firstObject];
+        [mediaMetaData setNullableObject:imageDict[@"url"]
+                                  forKey:kMetadataKeyIconURL];
     }
 
     return mediaMetaData;
