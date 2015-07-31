@@ -28,6 +28,7 @@
 @interface CastServiceTests : XCTestCase
 
 @property(nonatomic, strong) CastService *service;
+
 @end
 
 @implementation CastServiceTests
@@ -195,7 +196,56 @@
             }];
 }
 
+#pragma mark - Method Implementation Tests
+
+- (void)testSeekShouldBeImplemented {
+    [self assertMethodIsImplemented:^{
+        [self.service seek:0.0 success:nil failure:nil];
+    }];
+}
+
+- (void)testGetDurationShouldBeImplemented {
+    [self assertMethodIsImplemented:^{
+        [self.service getDurationWithSuccess:nil failure:nil];
+    }];
+}
+
+- (void)testGetPositionShouldBeImplemented {
+    [self assertMethodIsImplemented:^{
+        [self.service getPositionWithSuccess:nil failure:nil];
+    }];
+}
+
+- (void)testGetPlayStateShouldBeImplemented {
+    [self assertMethodIsImplemented:^{
+        [self.service getPlayStateWithSuccess:nil failure:nil];
+    }];
+}
+
+- (void)testSubscribePlayStateShouldBeImplemented {
+    [self assertMethodIsImplemented:^{
+        [self.service subscribePlayStateWithSuccess:nil failure:nil];
+    }];
+}
+
+- (void)testGetMediaMetadataShouldBeImplemented {
+    [self assertMethodIsImplemented:^{
+        [self.service getMediaMetaDataWithSuccess:nil failure:nil];
+    }];
+}
+
+- (void)testSubscribeMediaInfoShouldBeImplemented {
+    [self assertMethodIsImplemented:^{
+        [self.service subscribeMediaInfoWithSuccess:nil failure:nil];
+    }];
+}
+
 #pragma mark - Helpers
+
+- (void)assertMethodIsImplemented:(void (^)())testBlock {
+    XCTAssertNoThrowSpecificNamed(testBlock(), NSException,
+                                  NSInvalidArgumentException);
+}
 
 - (void)checkPlayVideoWithMediaInfo:(MediaInfo *)mediaInfo
 shouldLoadMediaWithMediaInformationPassingTest:(void (^)(GCKMediaInformation *mediaInformation))checkBlock {

@@ -25,7 +25,7 @@
 #import "CastServiceChannel.h"
 
 
-@interface CastWebAppSession : WebAppSession <GCKMediaControlChannelDelegate>
+@interface CastWebAppSession : WebAppSession
 
 @property (nonatomic, readonly) CastService *service;
 @property (nonatomic) GCKApplicationMetadata *metadata;
