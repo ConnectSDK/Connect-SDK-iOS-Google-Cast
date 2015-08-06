@@ -280,9 +280,9 @@ shouldVerifyExpectationOnMediaControlChannelMock:
     XCTestExpectation *mediaLoadedExpectation = [self expectationWithDescription:@"media did load"];
     checkBlock(controlChannelMock, mediaLoadedExpectation);
 
-    [[OCMStub([deviceManagerStub launchApplication:OCMOCK_ANY
-                                 relaunchIfRunning:NO]).andReturn(42) ignoringNonObjectArgs]
-        andDo:^(NSInvocation *invocation) {
+    [OCMStub([deviceManagerStub launchApplication:OCMOCK_ANY
+                                withLaunchOptions:OCMOCK_ANY]).andReturn(42)
+        andDo:^(NSInvocation *_) {
             id /*GCKApplicationMetadata **/ metadataStub = OCMClassMock([GCKApplicationMetadata class]);
             OCMStub([metadataStub applicationID]).andReturn(self.service.castWebAppId);
             [self.service deviceManager:deviceManagerStub

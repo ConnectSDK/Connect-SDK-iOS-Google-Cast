@@ -523,7 +523,7 @@ static NSString *const kSubtitleTrackDefaultLanguage = @"en";
     if (failure)
         [_launchFailureBlocks setObject:failure forKey:mediaAppId];
 
-    BOOL result = [_castDeviceManager launchApplication:mediaAppId relaunchIfRunning:NO];
+    BOOL result = [self launchApplicationWithId:mediaAppId relaunchIfRunning:NO];
 
     if (!result)
     {
@@ -790,7 +790,8 @@ static NSString *const kSubtitleTrackDefaultLanguage = @"en";
 
     _launchingAppId = webAppId;
 
-    BOOL result = [_castDeviceManager launchApplication:webAppId relaunchIfRunning:relaunchIfRunning];
+    BOOL result = [self launchApplicationWithId:webAppId
+                              relaunchIfRunning:relaunchIfRunning];
 
     if (!result)
     {
@@ -1157,6 +1158,15 @@ static NSString *const kSubtitleTrackDefaultLanguage = @"en";
     }
 
     return mediaMetaData;
+}
+
+- (BOOL)launchApplicationWithId:(NSString *)webAppId
+              relaunchIfRunning:(BOOL)relaunchIfRunning {
+    GCKLaunchOptions *options = [[GCKLaunchOptions alloc]
+        initWithRelaunchIfRunning:relaunchIfRunning];
+    NSInteger requestId = [_castDeviceManager launchApplication:webAppId
+                                              withLaunchOptions:options];
+    return kGCKInvalidRequestID != requestId;
 }
 
 @end
