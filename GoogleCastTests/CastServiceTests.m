@@ -23,7 +23,10 @@
 #import "SubtitleInfo.h"
 
 #import "NSInvocation+ObjectGetter.h"
+#import "OCMArg+ArgumentCaptor.h"
 #import "OCMStubRecorder+XCTestExpectation.h"
+
+#import <GoogleCast/GoogleCast.h>
 
 @interface CastServiceTests : XCTestCase
 
@@ -274,8 +277,10 @@ shouldVerifyExpectationOnMediaControlChannelMock:
     id /*GCKDeviceManager **/ deviceManagerStub = OCMClassMock([GCKDeviceManager class]);
     OCMStub([self.service createDeviceManagerWithDevice:OCMOCK_ANY
                                    andClientPackageName:OCMOCK_ANY]).andReturn(deviceManagerStub);
+    id<GCKDeviceManagerDelegate> deviceManagerDelegate;
+    OCMStub([(GCKDeviceManager *)deviceManagerStub setDelegate:[OCMArg captureTo:&deviceManagerDelegate]]);
     [self.service connect];
-    [self.service deviceManagerDidConnect:deviceManagerStub];
+    [deviceManagerDelegate deviceManagerDidConnect:deviceManagerStub];
 
     XCTestExpectation *mediaLoadedExpectation = [self expectationWithDescription:@"media did load"];
     checkBlock(controlChannelMock, mediaLoadedExpectation);
@@ -285,8 +290,8 @@ shouldVerifyExpectationOnMediaControlChannelMock:
         andDo:^(NSInvocation *_) {
             id /*GCKApplicationMetadata **/ metadataStub = OCMClassMock([GCKApplicationMetadata class]);
             OCMStub([metadataStub applicationID]).andReturn(self.service.castWebAppId);
-            [self.service deviceManager:deviceManagerStub
-            didConnectToCastApplication:metadataStub
+            [deviceManagerDelegate deviceManager:deviceManagerStub
+                     didConnectToCastApplication:metadataStub
                               sessionID:@"s"
                     launchedApplication:YES];
         }];
