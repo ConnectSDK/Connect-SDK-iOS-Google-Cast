@@ -22,6 +22,10 @@
 #import "ConnectError.h"
 #import "CastWebAppSession.h"
 
+//@interface CastServiceChannel ():
+
+//@end
+
 @implementation CastServiceChannel
 {
     __weak CastWebAppSession *_session;

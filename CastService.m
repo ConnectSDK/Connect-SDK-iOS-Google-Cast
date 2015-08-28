@@ -27,6 +27,8 @@
 #import "NSObject+FeatureNotSupported_Private.h"
 #import "NSMutableDictionary+NilSafe.h"
 
+#import <GoogleCast/GoogleCast.h>
+
 #define kCastServiceMuteSubscriptionName @"mute"
 #define kCastServiceVolumeSubscriptionName @"volume"
 

@@ -20,7 +20,8 @@
 
 #import "CastWebAppSession.h"
 #import "ConnectError.h"
-
+#import "CastServiceChannel.h"
+#import <GoogleCast/GoogleCast.h>
 
 @interface CastWebAppSession () <GCKMediaControlChannelDelegate>
 
