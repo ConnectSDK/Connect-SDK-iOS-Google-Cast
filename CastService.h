@@ -33,7 +33,7 @@
 @class GCKMediaControlChannel;
 @class GCKMediaInformation;
 
-@interface CastService : DeviceService </*GCKDeviceManagerDelegate,*/ MediaPlayer, MediaControl, VolumeControl, WebAppLauncher>
+@interface CastService : DeviceService <MediaPlayer, MediaControl, VolumeControl, WebAppLauncher>
 
 /*! The GCKDeviceManager that CastService is using internally to manage devices. */
 @property (nonatomic, retain, readonly) GCKDeviceManager *castDeviceManager;

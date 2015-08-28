@@ -20,7 +20,9 @@
 
 #import "CastService.h"
 
-@interface CastService ()
+#import <GoogleCast/GCKDeviceManager.h>
+
+@interface CastService () <GCKDeviceManagerDelegate>
 
 - (GCKDeviceManager *)createDeviceManagerWithDevice:(GCKDevice *)device
                                andClientPackageName:(NSString *)clientPackageName;
