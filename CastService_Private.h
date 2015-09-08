@@ -1,9 +1,9 @@
 //
-//  CastWebAppSession.h
-//  Connect SDK
+//  CastService_Private.h
+//  ConnectSDK
 //
-//  Created by Jeremy White on 2/23/14.
-//  Copyright (c) 2014 LG Electronics.
+//  Created by Eugene Nikolskyi on 2015-07-24.
+//  Copyright (c) 2015 LG Electronics. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,17 +18,12 @@
 //  limitations under the License.
 //
 
-#import <Foundation/Foundation.h>
 #import "CastService.h"
-#import "WebAppSession.h"
-#import "MediaControl.h"
-#import "CastServiceChannel.h"
 
+@interface CastService ()
 
-@interface CastWebAppSession : WebAppSession
-
-@property (nonatomic, readonly) CastService *service;
-@property (nonatomic) GCKApplicationMetadata *metadata;
-@property (nonatomic, readonly) CastServiceChannel *castServiceChannel;
+- (GCKDeviceManager *)createDeviceManagerWithDevice:(GCKDevice *)device
+                               andClientPackageName:(NSString *)clientPackageName;
+- (GCKMediaControlChannel *)createMediaControlChannel;
 
 @end

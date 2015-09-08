@@ -18,15 +18,27 @@
 //  limitations under the License.
 //
 
-#import <GoogleCast/GoogleCast.h>
-#import "CastService.h"
+#import "CastService_Private.h"
+
 #import "ConnectError.h"
 #import "CastWebAppSession.h"
+#import "SubtitleInfo.h"
+
+#import "NSObject+FeatureNotSupported_Private.h"
+#import "NSMutableDictionary+NilSafe.h"
 
 #define kCastServiceMuteSubscriptionName @"mute"
 #define kCastServiceVolumeSubscriptionName @"volume"
 
-@interface CastService () <ServiceCommandDelegate>
+static const NSInteger kSubtitleTrackIdentifier = 42;
+
+static NSString *const kSubtitleTrackDefaultLanguage = @"en";
+
+@interface CastService () <ServiceCommandDelegate, GCKMediaControlChannelDelegate>
+
+@property (nonatomic, strong) MediaPlayStateSuccessBlock immediatePlayStateCallback;
+@property (nonatomic, strong) ServiceSubscription *playStateSubscription;
+@property (nonatomic, strong) ServiceSubscription *mediaInfoSubscription;
 
 @end
 
@@ -97,6 +109,8 @@
     capabilities = [capabilities arrayByAddingObjectsFromArray:kMediaPlayerCapabilities];
     capabilities = [capabilities arrayByAddingObjectsFromArray:kVolumeControlCapabilities];
     capabilities = [capabilities arrayByAddingObjectsFromArray:@[
+            kMediaPlayerSubtitleWebVTT,
+
             kMediaControlPlay,
             kMediaControlPause,
             kMediaControlStop,
@@ -120,12 +134,6 @@
     ]];
 
     [self setCapabilities:capabilities];
-}
-
-- (void) sendNotSupportedFailure:(FailureBlock)failure
-{
-    if (failure)
-        failure([ConnectError generateErrorWithCode:ConnectStatusCodeNotSupported andDetails:nil]);
 }
 
 -(NSString *)castWebAppId
@@ -153,8 +161,9 @@
     {
         NSDictionary *info = [[NSBundle mainBundle] infoDictionary];
         NSString *clientPackageName = [info objectForKey:@"CFBundleIdentifier"];
-        
-        _castDeviceManager = [[GCKDeviceManager alloc] initWithDevice:_castDevice clientPackageName:clientPackageName];
+
+        _castDeviceManager = [self createDeviceManagerWithDevice:_castDevice
+                                            andClientPackageName:clientPackageName];
         _castDeviceManager.delegate = self;
     }
     
@@ -179,10 +188,17 @@
 
 - (int)sendSubscription:(ServiceSubscription *)subscription type:(ServiceSubscriptionType)type payload:(id)payload toURL:(NSURL *)URL withId:(int)callId
 {
-    if (type == ServiceSubscriptionTypeUnsubscribe)
-        [_subscriptions removeObject:subscription];
-    else if (type == ServiceSubscriptionTypeSubscribe)
+    if (type == ServiceSubscriptionTypeUnsubscribe) {
+        if (subscription == _playStateSubscription) {
+            _playStateSubscription = nil;
+        } else if (subscription == _mediaInfoSubscription) {
+            _mediaInfoSubscription = nil;
+        } else {
+            [_subscriptions removeObject:subscription];
+        }
+    } else if (type == ServiceSubscriptionTypeSubscribe) {
         [_subscriptions addObject:subscription];
+    }
 
     return callId;
 }
@@ -201,7 +217,7 @@
 
     self.connected = YES;
 
-    _castMediaControlChannel = [[GCKMediaControlChannel alloc] init];
+    _castMediaControlChannel = [self createMediaControlChannel];
     [_castDeviceManager addChannel:_castMediaControlChannel];
 
     dispatch_on_main(^{ [self.delegate deviceServiceConnectionSuccess:self]; });
@@ -449,8 +465,22 @@
         GCKImage *iconImage = [[GCKImage alloc] initWithURL:iconURL width:100 height:100];
         [metaData addImage:iconImage];
     }
-    
-    GCKMediaInformation *mediaInformation = [[GCKMediaInformation alloc] initWithContentID:mediaInfo.url.absoluteString streamType:GCKMediaStreamTypeBuffered contentType:mediaInfo.mimeType metadata:metaData streamDuration:1000 customData:nil];
+
+    NSArray *mediaTracks;
+    if (mediaInfo.subtitleInfo) {
+        mediaTracks = @[
+            [self mediaTrackFromSubtitleInfo:mediaInfo.subtitleInfo]];
+    }
+
+    GCKMediaInformation *mediaInformation = [[GCKMediaInformation alloc]
+        initWithContentID:mediaInfo.url.absoluteString
+               streamType:GCKMediaStreamTypeBuffered
+              contentType:mediaInfo.mimeType
+                 metadata:metaData
+           streamDuration:1000
+              mediaTracks:mediaTracks
+           textTrackStyle:[GCKMediaTextTrackStyle createDefault]
+               customData:nil];
     
     [self playMedia:mediaInformation webAppId:self.castWebAppId success:success failure:failure];
 }
@@ -459,7 +489,15 @@
 {
     WebAppLaunchSuccessBlock webAppLaunchBlock = ^(WebAppSession *webAppSession)
     {
-        NSInteger result = [_castMediaControlChannel loadMedia:mediaInformation autoplay:YES];
+        NSArray *trackIDs;
+        if (mediaInformation.mediaTracks) {
+            trackIDs = @[@(kSubtitleTrackIdentifier)];
+        }
+
+        NSInteger result = [_castMediaControlChannel loadMedia:mediaInformation
+                                                      autoplay:YES
+                                                  playPosition:0.0
+                                                activeTrackIDs:trackIDs];
 
         if (result == kGCKInvalidRequestID)
         {
@@ -469,7 +507,7 @@
         {
             webAppSession.launchSession.sessionType = LaunchSessionTypeMedia;
 
-            _castMediaControlChannel.delegate = (CastWebAppSession *) webAppSession;
+            _castMediaControlChannel.delegate = self;
 
             if (success){
                     MediaLaunchObject *launchObject = [[MediaLaunchObject alloc] initWithLaunchSession:webAppSession.launchSession andMediaControl:webAppSession.mediaControl];
@@ -485,7 +523,7 @@
     if (failure)
         [_launchFailureBlocks setObject:failure forKey:mediaAppId];
 
-    BOOL result = [_castDeviceManager launchApplication:mediaAppId relaunchIfRunning:NO];
+    BOOL result = [self launchApplicationWithId:mediaAppId relaunchIfRunning:NO];
 
     if (!result)
     {
@@ -598,16 +636,129 @@
 
 - (void)rewindWithSuccess:(SuccessBlock)success failure:(FailureBlock)failure
 {
-    if (failure)
-        failure([ConnectError generateErrorWithCode:ConnectStatusCodeNotSupported andDetails:nil]);
+    [self sendNotSupportedFailure:failure];
 }
 
 - (void)fastForwardWithSuccess:(SuccessBlock)success failure:(FailureBlock)failure
 {
-    if (failure)
-        failure([ConnectError generateErrorWithCode:ConnectStatusCodeNotSupported andDetails:nil]);
+    [self sendNotSupportedFailure:failure];
 }
 
+- (void)seek:(NSTimeInterval)position
+     success:(SuccessBlock)success
+     failure:(FailureBlock)failure {
+    if (!self.castMediaControlChannel.mediaStatus)
+    {
+        if (failure)
+            failure([ConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"There is no media currently available"]);
+
+        return;
+    }
+
+    NSInteger result = [self.castMediaControlChannel seekToTimeInterval:position];
+
+    if (result == kGCKInvalidRequestID)
+    {
+        if (failure)
+            failure([ConnectError generateErrorWithCode:ConnectStatusCodeTvError andDetails:nil]);
+    } else
+    {
+        if (success)
+            success(nil);
+    }
+}
+
+- (void)getDurationWithSuccess:(MediaDurationSuccessBlock)success
+                       failure:(FailureBlock)failure {
+    if (self.castMediaControlChannel.mediaStatus)
+    {
+        if (success)
+            success(self.castMediaControlChannel.mediaStatus.mediaInformation.streamDuration);
+    } else
+    {
+        if (failure)
+            failure([ConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"There is no media currently available"]);
+    }
+}
+
+- (void)getPositionWithSuccess:(MediaPositionSuccessBlock)success
+                       failure:(FailureBlock)failure {
+    if (self.castMediaControlChannel.mediaStatus)
+    {
+        if (success)
+            success(self.castMediaControlChannel.approximateStreamPosition);
+    } else
+    {
+        if (failure)
+            failure([ConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"There is no media currently available"]);
+    }
+}
+
+- (void)getPlayStateWithSuccess:(MediaPlayStateSuccessBlock)success
+                        failure:(FailureBlock)failure {
+    if (!self.castMediaControlChannel.mediaStatus)
+    {
+        if (failure)
+            failure([ConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"There is no media currently available"]);
+
+        return;
+    }
+
+    _immediatePlayStateCallback = success;
+
+    NSInteger result = [self.castMediaControlChannel requestStatus];
+
+    if (result == kGCKInvalidRequestID)
+    {
+        _immediatePlayStateCallback = nil;
+
+        if (failure)
+            failure([ConnectError generateErrorWithCode:ConnectStatusCodeTvError andDetails:nil]);
+    }
+}
+
+- (ServiceSubscription *)subscribePlayStateWithSuccess:(MediaPlayStateSuccessBlock)success
+                                               failure:(FailureBlock)failure {
+    if (!_playStateSubscription)
+        _playStateSubscription = [ServiceSubscription subscriptionWithDelegate:self target:nil payload:nil callId:-1];
+
+    [_playStateSubscription addSuccess:success];
+    [_playStateSubscription addFailure:failure];
+
+    [self.castMediaControlChannel requestStatus];
+
+    return _playStateSubscription;
+}
+
+- (void)getMediaMetaDataWithSuccess:(SuccessBlock)success
+                            failure:(FailureBlock)failure {
+    if (self.castMediaControlChannel.mediaStatus)
+    {
+        if (success) {
+            success([self metadataInfoFromMediaMetadata:self.castMediaControlChannel
+                .mediaStatus
+                .mediaInformation
+                .metadata]);
+        }
+    } else
+    {
+        if (failure)
+            failure([ConnectError generateErrorWithCode:ConnectStatusCodeError andDetails:@"There is no media currently available"]);
+    }
+}
+
+- (ServiceSubscription *)subscribeMediaInfoWithSuccess:(SuccessBlock)success
+                                               failure:(FailureBlock)failure {
+    if (!_mediaInfoSubscription)
+        _mediaInfoSubscription = [ServiceSubscription subscriptionWithDelegate:self target:nil payload:nil callId:-1];
+
+    [_mediaInfoSubscription addSuccess:success];
+    [_mediaInfoSubscription addFailure:failure];
+
+    [self.castMediaControlChannel requestStatus];
+
+    return _mediaInfoSubscription;
+}
 
 #pragma mark - WebAppLauncher
 
@@ -639,7 +790,8 @@
 
     _launchingAppId = webAppId;
 
-    BOOL result = [_castDeviceManager launchApplication:webAppId relaunchIfRunning:relaunchIfRunning];
+    BOOL result = [self launchApplicationWithId:webAppId
+                              relaunchIfRunning:relaunchIfRunning];
 
     if (!result)
     {
@@ -654,14 +806,12 @@
 
 - (void)launchWebApp:(NSString *)webAppId params:(NSDictionary *)params success:(WebAppLaunchSuccessBlock)success failure:(FailureBlock)failure
 {
-    if (failure)
-        failure([ConnectError generateErrorWithCode:ConnectStatusCodeNotSupported andDetails:nil]);
+    [self sendNotSupportedFailure:failure];
 }
 
 - (void)launchWebApp:(NSString *)webAppId params:(NSDictionary *)params relaunchIfRunning:(BOOL)relaunchIfRunning success:(WebAppLaunchSuccessBlock)success failure:(FailureBlock)failure
 {
-    if (failure)
-        failure([ConnectError generateErrorWithCode:ConnectStatusCodeNotSupported andDetails:nil]);
+    [self sendNotSupportedFailure:failure];
 }
 
 - (void)joinWebApp:(LaunchSession *)webAppLaunchSession success:(WebAppLaunchSuccessBlock)success failure:(FailureBlock)failure
@@ -897,6 +1047,126 @@
     [self.castDeviceManager requestDeviceStatus];
 
     return subscription;
+}
+
+#pragma mark - GCKMediaControlChannelDelegate methods
+
+- (void)mediaControlChannelDidUpdateStatus:(GCKMediaControlChannel *)mediaControlChannel
+{
+    MediaControlPlayState playState;
+
+    switch (mediaControlChannel.mediaStatus.playerState)
+    {
+        case GCKMediaPlayerStateIdle:
+            if (mediaControlChannel.mediaStatus.idleReason == GCKMediaPlayerIdleReasonFinished)
+                playState = MediaControlPlayStateFinished;
+            else
+                playState = MediaControlPlayStateIdle;
+            break;
+
+        case GCKMediaPlayerStatePlaying:
+            playState = MediaControlPlayStatePlaying;
+            break;
+
+        case GCKMediaPlayerStatePaused:
+            playState = MediaControlPlayStatePaused;
+            break;
+
+        case GCKMediaPlayerStateBuffering:
+            playState = MediaControlPlayStateBuffering;
+            break;
+
+        case GCKMediaPlayerStateUnknown:
+        default:
+            playState = MediaControlPlayStateUnknown;
+    }
+
+    if (_immediatePlayStateCallback)
+    {
+        _immediatePlayStateCallback(playState);
+        _immediatePlayStateCallback = nil;
+    }
+
+    if (_playStateSubscription)
+    {
+        [_playStateSubscription.successCalls enumerateObjectsUsingBlock:^(id success, NSUInteger idx, BOOL *stop)
+        {
+            MediaPlayStateSuccessBlock mediaPlayStateSuccess = (MediaPlayStateSuccessBlock) success;
+
+            if (mediaPlayStateSuccess)
+                mediaPlayStateSuccess(playState);
+        }];
+    }
+
+    if (_mediaInfoSubscription)
+    {
+        [_mediaInfoSubscription.successCalls enumerateObjectsUsingBlock:^(id success, NSUInteger idx, BOOL *stop)
+        {
+            SuccessBlock mediaInfoSuccess = (SuccessBlock) success;
+
+            if (mediaInfoSuccess){
+                mediaInfoSuccess([self metadataInfoFromMediaMetadata:self.castMediaControlChannel
+                    .mediaStatus
+                    .mediaInformation
+                    .metadata]);
+            }
+        }];
+    }
+}
+
+#pragma mark - Private
+
+- (GCKDeviceManager *)createDeviceManagerWithDevice:(GCKDevice *)device
+                               andClientPackageName:(NSString *)clientPackageName {
+    return [[GCKDeviceManager alloc] initWithDevice:device
+                                  clientPackageName:clientPackageName];
+}
+
+- (GCKMediaControlChannel *)createMediaControlChannel {
+    return [[GCKMediaControlChannel alloc] init];
+}
+
+- (GCKMediaTrack *)mediaTrackFromSubtitleInfo:(SubtitleInfo *)subtitleInfo {
+    return [[GCKMediaTrack alloc]
+        initWithIdentifier:kSubtitleTrackIdentifier
+         contentIdentifier:subtitleInfo.url.absoluteString
+               contentType:subtitleInfo.mimeType
+                      type:GCKMediaTrackTypeText
+               textSubtype:GCKMediaTextTrackSubtypeSubtitles
+                      name:subtitleInfo.label
+        // languageCode is required when the track is subtitles
+              languageCode:subtitleInfo.language ?: kSubtitleTrackDefaultLanguage
+                customData:nil];
+}
+
+- (NSDictionary *)metadataInfoFromMediaMetadata:(GCKMediaMetadata *)metaData {
+    NSMutableDictionary *mediaMetaData = [NSMutableDictionary dictionary];
+
+    [mediaMetaData setNullableObject:[metaData objectForKey:kGCKMetadataKeyTitle]
+                              forKey:@"title"];
+    [mediaMetaData setNullableObject:[metaData objectForKey:kGCKMetadataKeySubtitle]
+                              forKey:@"subtitle"];
+
+    NSString *const kMetadataKeyIconURL = @"iconURL";
+    GCKImage *image = [metaData.images firstObject];
+    [mediaMetaData setNullableObject:image.URL.absoluteString
+                              forKey:kMetadataKeyIconURL];
+    if (!mediaMetaData[kMetadataKeyIconURL]) {
+        NSDictionary *imageDict = [[metaData objectForKey:@"images"] firstObject];
+        [mediaMetaData setNullableObject:imageDict[@"url"]
+                                  forKey:kMetadataKeyIconURL];
+    }
+
+    return mediaMetaData;
+}
+
+- (BOOL)launchApplicationWithId:(NSString *)webAppId
+              relaunchIfRunning:(BOOL)relaunchIfRunning {
+    GCKLaunchOptions *options = [[GCKLaunchOptions alloc]
+        initWithRelaunchIfRunning:relaunchIfRunning];
+    NSInteger requestId = [_castDeviceManager launchApplication:webAppId
+                                              withLaunchOptions:options];
+    return kGCKInvalidRequestID != requestId;
 }
 
 @end

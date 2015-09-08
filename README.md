@@ -9,7 +9,9 @@ For more information about Connect SDK, visit the [main repository](https://gith
 1. Go to the [Google Cast Developer site](https://developers.google.com/cast/docs/developers#libraries) and download the iOS sender library
 2. Extract the `GoogleCast.framework` bundle from the downloaded zip file
 3. Move the framework bundle into your `modules/google-cast/` directory
-4. Link `GoogleCast.framework` with your application target
+4. **In your project**: link `GoogleCast.framework` with your application target:
+  * *either* drag it from the `ConnectSDK` project into your project's `Frameworks` group and then add it to your target
+  * *or* go to your project settings, select the application target, "Build Phases" tab, in "Link Binary With Libraries" section click "+", then "Add Other…", and select the framework file
 
 ###Connect SDK Lite Integration
 1. Clone this repository into a subfolder of the Connect SDK Lite project
